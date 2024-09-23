@@ -3,10 +3,10 @@ import { useRoutes } from 'react-router-dom';
 // routes
 import MainRoutes from './MainRoutes';
 import AuthenticationRoutes from './AuthenticationRoutes';
-import WMSRoutes from './WMSRoutes';
+import QrBarRouts from './QrBarRouts';
 
 // ==============================|| ROUTING RENDER ||============================== //
 
 export default function ThemeRoutes() {
-  return useRoutes([MainRoutes, AuthenticationRoutes, WMSRoutes]);
+  return useRoutes([MainRoutes, AuthenticationRoutes, QrBarRouts]);
 }
