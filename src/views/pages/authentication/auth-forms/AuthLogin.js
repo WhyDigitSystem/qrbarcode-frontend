@@ -326,34 +326,39 @@ const FirebaseLogin = ({ ...others }) => {
 
       if (response.data.status) {
         console.log('Test1', userData);
+        console.log('AllData', response);
+        console.log('AllData', response.data.paramObjectsMap.userVO.userId);
         // dispatch(setUser({ orgId: response.data.paramObjectsMap.userVO.orgId }));
 
-        localStorage.setItem('orgId', response.data.paramObjectsMap.userVO.orgId); // Replace with the actual token
-        localStorage.setItem('userId', response.data.paramObjectsMap.userVO.usersId);
-        localStorage.setItem('userName', response.data.paramObjectsMap.userVO.userName);
-        localStorage.setItem('userType', response.data.paramObjectsMap.userVO.userType);
-        localStorage.setItem('token', response.data.paramObjectsMap.userVO.token);
-        localStorage.setItem('tokenId', response.data.paramObjectsMap.userVO.tokenId);
+        // localStorage.setItem('orgId', response.data.paramObjectsMap.userVO.orgId); // Replace with the actual token
+        localStorage.setItem('userId', response.data.paramObjectsMap.userVO.userId);
+        localStorage.setItem('userName', response.data.paramObjectsMap.userVO.userName);  
+        // localStorage.setItem('userType', response.data.paramObjectsMap.userVO.userType); 
+        // localStorage.setItem('token', response.data.paramObjectsMap.userVO.token); 
+        // localStorage.setItem('tokenId', response.data.paramObjectsMap.userVO.tokenId);
         localStorage.setItem('LoginMessage', true);
-        //SET ROLES
-        const userRoleVO = response.data.paramObjectsMap.userVO.roleVO;
-        const roles = userRoleVO.map((row) => ({
-          role: row.role
-        }));
-        localStorage.setItem('ROLES', JSON.stringify(roles));
+        // //SET ROLES
+        // console.log('Test1', response.data.paramObjectsMap.userVO.role);
+        // const userRole = response.data.paramObjectsMap.userVO.role;
+        // const roles = userRole.map((row) => ({
+        //   role: row.role
+        // }));
+        // localStorage.setItem('ROLES', JSON.stringify(roles));
 
-        // SET SCREENS
-        const roleVO = response.data.paramObjectsMap.userVO.roleVO;
-        let allScreensVO = [];
-        roleVO.forEach((roleObj) => {
-          roleObj.responsibilityVO.forEach((responsibility) => {
-            if (responsibility.screensVO) {
-              allScreensVO = allScreensVO.concat(responsibility.screensVO);
-            }
-          });
-        });
-        allScreensVO = [...new Set(allScreensVO)];
-        localStorage.setItem('screens', JSON.stringify(allScreensVO));
+        // // SET SCREENS
+        // const roleVO = response.data.paramObjectsMap.userVO.role;
+        // let allScreensVO = [];
+        // roleVO.forEach((roleObj) => {
+        //   roleObj.responsibilityVO.forEach((responsibility) => {
+        //     console.log('allscreens',responsibility.allScreensVO);
+            
+        //     if (responsibility.allScreensVO) {
+        //       allScreensVO = allScreensVO.concat(responsibility.screensVO);
+        //     }
+        //   });
+        // });
+        // allScreensVO = [...new Set(allScreensVO)];
+        // localStorage.setItem('screens', JSON.stringify(allScreensVO));
 
         // dispatch(setUserRole(userRole));
         resetForm();
@@ -370,7 +375,7 @@ const FirebaseLogin = ({ ...others }) => {
         window.location.reload(true);
       } else {
         // Successful registration, perform actions like storing tokens and redirecting
-        toast.error(response.data.paramObjectsMap.errorMessage, {
+        toast.error(response.data.paramObjectsMap.message, {
           autoClose: 2000,
           theme: 'colored'
         });
