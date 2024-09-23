@@ -5,24 +5,24 @@ import MainLayout from 'layout/MainLayout';
 import Loadable from 'ui-component/Loadable';
 
 // login option 3 routing
-const AuthLogin3 = Loadable(lazy(() => import('views/pages/authentication/authentication3/Login3')));
-const AuthRegister3 = Loadable(lazy(() => import('views/pages/authentication/authentication3/Register3')));
+const Qrbarsingle = Loadable(lazy(() => import('views/pages/qrCode/QrBarCode')));
+const Qrbargroup = Loadable(lazy(() => import('views/pages/qrCode/QrBargroup')));
 
 // ==============================|| AUTHENTICATION ROUTING ||============================== //
 
-const WMSRoutes = {
+const QrBarRouts = {
   path: '/',
   element: <MainLayout />,
   children: [
-    // {
-    //   path: '/reports/reportsmain',
-    //   element: <ReportMain />
-    // },
-    // {
-    //   path: '/reports/reportsmain',
-    //   element: <ReportMain />
-    // }
+    {
+      path: '/qrbar/group',
+      element: <Qrbargroup />
+    },
+    {
+      path: '/qrbar/single',
+      element: <Qrbarsingle />
+    }
   ]
 };
 
-export default WMSRoutes;
+export default QrBarRouts;

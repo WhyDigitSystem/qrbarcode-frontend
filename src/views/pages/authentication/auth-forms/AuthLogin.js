@@ -337,28 +337,28 @@ const FirebaseLogin = ({ ...others }) => {
         // localStorage.setItem('token', response.data.paramObjectsMap.userVO.token); 
         // localStorage.setItem('tokenId', response.data.paramObjectsMap.userVO.tokenId);
         localStorage.setItem('LoginMessage', true);
-        //SET ROLES
-        console.log('Test1', response.data.paramObjectsMap.userVO.role);
-        const userRole = response.data.paramObjectsMap.userVO.role;
-        const roles = userRole.map((row) => ({
-          role: row.role
-        }));
-        localStorage.setItem('ROLES', JSON.stringify(roles));
+        // //SET ROLES
+        // console.log('Test1', response.data.paramObjectsMap.userVO.role);
+        // const userRole = response.data.paramObjectsMap.userVO.role;
+        // const roles = userRole.map((row) => ({
+        //   role: row.role
+        // }));
+        // localStorage.setItem('ROLES', JSON.stringify(roles));
 
-        // SET SCREENS
-        const roleVO = response.data.paramObjectsMap.userVO.role;
-        let allScreensVO = [];
-        roleVO.forEach((roleObj) => {
-          roleObj.responsibilityVO.forEach((responsibility) => {
-            console.log('allscreens',responsibility.allScreensVO);
+        // // SET SCREENS
+        // const roleVO = response.data.paramObjectsMap.userVO.role;
+        // let allScreensVO = [];
+        // roleVO.forEach((roleObj) => {
+        //   roleObj.responsibilityVO.forEach((responsibility) => {
+        //     console.log('allscreens',responsibility.allScreensVO);
             
-            if (responsibility.allScreensVO) {
-              allScreensVO = allScreensVO.concat(responsibility.screensVO);
-            }
-          });
-        });
-        allScreensVO = [...new Set(allScreensVO)];
-        localStorage.setItem('screens', JSON.stringify(allScreensVO));
+        //     if (responsibility.allScreensVO) {
+        //       allScreensVO = allScreensVO.concat(responsibility.screensVO);
+        //     }
+        //   });
+        // });
+        // allScreensVO = [...new Set(allScreensVO)];
+        // localStorage.setItem('screens', JSON.stringify(allScreensVO));
 
         // dispatch(setUserRole(userRole));
         resetForm();
