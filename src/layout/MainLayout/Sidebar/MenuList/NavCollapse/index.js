@@ -27,15 +27,7 @@ const NavCollapse = ({ menu, level }) => {
   const handleClick = () => {
     setOpen(!open);
     setSelected(!selected ? menu.id : null);
-    if (
-      menu?.id !== 'qrBarCode'
-      // menu?.id !== 'icons' &&
-      // menu?.id !== 'rolesAndResponsibilities' &&
-      // menu?.id !== 'companySetup' &&
-      // menu?.id !== 'basicMasters' &&
-      // menu?.id !== 'uisamples' &&
-      // menu?.id !== 'warehouseMasters'
-    ) {
+    if (menu?.id !== 'authentication') {
       navigate(menu.children[0]?.url);
     }
   };
