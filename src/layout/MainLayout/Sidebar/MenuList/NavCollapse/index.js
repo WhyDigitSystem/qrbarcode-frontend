@@ -28,13 +28,13 @@ const NavCollapse = ({ menu, level }) => {
     setOpen(!open);
     setSelected(!selected ? menu.id : null);
     if (
-      menu?.id !== 'authentication' &&
-      menu?.id !== 'icons' &&
-      menu?.id !== 'rolesAndResponsibilities' &&
-      menu?.id !== 'companySetup' &&
-      menu?.id !== 'basicMasters' &&
-      menu?.id !== 'uisamples' &&
-      menu?.id !== 'warehouseMasters'
+      menu?.id !== 'qrBarCode'
+      // menu?.id !== 'icons' &&
+      // menu?.id !== 'rolesAndResponsibilities' &&
+      // menu?.id !== 'companySetup' &&
+      // menu?.id !== 'basicMasters' &&
+      // menu?.id !== 'uisamples' &&
+      // menu?.id !== 'warehouseMasters'
     ) {
       navigate(menu.children[0]?.url);
     }
