@@ -74,11 +74,11 @@ const Header = ({ handleLeftDrawerToggle }) => {
             marginBottom: '8px'
           }}
         ></span>
-        <h6>WMS</h6>
+        <h6>Qr & Bar Code</h6>
       </div>
 
       <NotificationSection />
-      <GlobalSection />
+      {/* <GlobalSection /> */}
       <ProfileSection />
     </>
   );

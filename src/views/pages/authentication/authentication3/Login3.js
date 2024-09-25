@@ -41,20 +41,7 @@ const Login = () => {
                       <img src={efit_logo} alt="efit_logo" style={{ width: '150px', height: 'auto' }} />
                     </Link>
                   </Grid>
-                  <Grid item xs={12}>
-                    <Grid container direction={matchDownSM ? 'column-reverse' : 'row'} alignItems="center" justifyContent="center">
-                      <Grid item>
-                        <Stack alignItems="center" justifyContent="center" spacing={1}>
-                          {/* <Typography color={theme.palette.secondary.main} gutterBottom variant={matchDownSM ? 'h3' : 'h1'}>
-                            WMS
-                          </Typography> */}
-                          <div style={bevanRegularStyle} className="my-2 mt-3">
-                            WMS
-                          </div>
-                        </Stack>
-                      </Grid>
-                    </Grid>
-                  </Grid>
+                  
                   <Grid item xs={12}>
                     <Grid container direction={matchDownSM ? 'column-reverse' : 'row'} alignItems="center" justifyContent="center">
                       <Grid item>
