@@ -1,4 +1,5 @@
 import React, { useEffect, useState,useRef } from 'react';
+import dayjs from 'dayjs';
 import QRCode from 'qrcode.react';
 import Barcode from 'react-barcode';
 import { QRCodeCanvas } from 'qrcode.react'; 
@@ -20,8 +21,17 @@ import ClearIcon from '@mui/icons-material/Clear';
 import AddIcon from '@mui/icons-material/Add';
 import GridOnIcon from '@mui/icons-material/GridOn';
 import DeleteIcon from '@mui/icons-material/Delete';
+import { RiAiGenerate } from 'react-icons/ri';
+import Dialog from '@mui/material/Dialog';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import DialogActions from '@mui/material/DialogActions';
+import Checkbox from '@mui/material/Checkbox';
+
 
 import ActionButton from 'utils/ActionButton';
+import CommonBulkUpload from 'utils/CommonBulkUpload';
+import sampleFile from '../../../assets/sample-files/sample_Location_movement.xls';
 import CommonListViewTable from '../CommonListViewTable';
 import apiCalls from 'apicall';
 
@@ -35,10 +45,16 @@ function PaperComponent(props) {
 
 const QrBargroup = () => {
   const [formData, setFormData] = useState({
-    entryno:'' 
+    entryno:'',
+    count:'',
+    docno:'',
+    documentDate: dayjs().format('DD-MM-YYYY')
   });
   const [fieldErrors, setFieldErrors] = useState({
-    entryno:''
+    entryno:'',
+    count:'',
+    docno:'',
+    documentDate: ''
   });
   const [value, setValue] = useState(0);
   const [listView, setListView] = useState(false);
@@ -52,8 +68,7 @@ const QrBargroup = () => {
       partNo: '',
       partDesc:'',
       qrcodevalue:'',
-      barcodevalue:'',
-      count:''
+      barcodevalue:''
     }
   ]);
   const [modalTableErrors, setModalTableErrors] = useState([
@@ -62,10 +77,11 @@ const QrBargroup = () => {
       partNo: '',
       partDesc:'',
       qrcodevalue:'',
-      barcodevalue:'',
-      count:''
+      barcodevalue:''
     }
   ]);
+  const [loginUserName, setLoginUserName] = useState(localStorage.getItem('userName'));
+  const [editId, setEditId] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const lrNoDetailsRefs = useRef([]);
 
@@ -74,8 +90,7 @@ const QrBargroup = () => {
       partNo: lrNoDetailsRefs.current[index]?.partNo || React.createRef(),
       partDesc: lrNoDetailsRefs.current[index]?.partDesc || React.createRef(),
       qrcodevalue: lrNoDetailsRefs.current[index]?.qrcodevalue || React.createRef(),
-      barcodevalue: lrNoDetailsRefs.current[index]?.barcodevalue || React.createRef(),
-      count: lrNoDetailsRefs.current[index]?.count || React.createRef()
+      barcodevalue: lrNoDetailsRefs.current[index]?.barcodevalue || React.createRef()
     }));
   }, [childTableData]);
 
@@ -100,6 +115,33 @@ const QrBargroup = () => {
     setValue(newValue);
   };
 
+  const getAllFillGrid = async () => {
+    try {
+      const response = await apiCalls(
+        'get',
+        `/qrbarcode/getFillGridFromQrBarExcelUpload?entryNo=${formData.entryno}`
+      );
+      console.log('API Response:', response);
+
+      if (response.status === true) {
+        // setFillGridData(response.paramObjectsMap.locationMovementDetailsVO);
+        const gridDetails = response.paramObjectsMap.qrBarCodeVO;
+        console.log('THE MODAL TABLE DATA FROM API ARE:', gridDetails);
+        setModalTableData(
+          gridDetails.map((row) => ({
+            partNo: row.partNo,
+            partDesc: row.partDesc
+          }))
+        );
+        setChildTableData([]);
+      } else {
+        console.error('API Error:', response);
+      }
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    }
+  };
+
   const handleInputChange = (e) => {
     const { name, value, selectionStart, selectionEnd, type } = e.target;
     const numRegex = /^[0-9]*$/;
@@ -107,7 +149,10 @@ const QrBargroup = () => {
 
     if (name === 'entryno' && !nameRegex.test(value)) {
       setFieldErrors({ ...fieldErrors, [name]: 'Invalid Format' });
-    } else {
+    }if (name === 'count' && !numRegex.test(value)) {
+      setFieldErrors({ ...fieldErrors, [name]: 'Invalid Format' });
+    }
+     else {
       setFormData({
         ...formData,
         [name]: value,
@@ -141,8 +186,7 @@ const QrBargroup = () => {
       partNo: '',
       partDesc:'',
       qrcodevalue:'',
-      barcodevalue:'',
-      count:''
+      barcodevalue:''
     };
     setChildTableData([...childTableData, newRow]);
     setChildTableErrors([
@@ -151,8 +195,7 @@ const QrBargroup = () => {
         partNo: '',
         partDesc:'',
         qrcodevalue:'',
-        barcodevalue:'',
-        count:''
+        barcodevalue:''
       }
     ]);
   }
@@ -162,7 +205,7 @@ const QrBargroup = () => {
     if (!lastRow) return false;
 
     if (table === childTableData) {
-      return !lastRow.partDesc || !lastRow.partNo || !lastRow.qrcodevalue || !lastRow.barcodevalue || !lastRow.count;
+      return !lastRow.partDesc || !lastRow.partNo || !lastRow.qrcodevalue || !lastRow.barcodevalue;
     }
     return false;
   };
@@ -173,7 +216,6 @@ const QrBargroup = () => {
         const newErrors = [...prevErrors];
         newErrors[table.length - 1] = {
           ...newErrors[table.length - 1],
-          count: !table[table.length - 1].count ? 'Count is required' : '',
           partNo: !table[table.length - 1].partNo ? 'Part No is required' : '',
           partDesc: !table[table.length - 1].partDesc ? 'PartDesc is required' : '',
           qrcodevalue: !table[table.length - 1].qrcodevalue ? 'QrCode Value is required' : '',
@@ -197,25 +239,39 @@ const QrBargroup = () => {
 
   const handleClear = () =>{
     setFormData({
-      entryno:''
+      entryno:'',
+      count:'',
+      docno: '',
+      documentDate: dayjs().format('DD-MM-YYYY')
     })
     setFieldErrors({
-      entryno:''
+      entryno:'',
+      count:'',
+      docno: '',
+      documentDate: ''
     }) 
     setChildTableErrors([]);
     setChildTableData([{
       partNo:'',
       partDesc:'',
       qrcodevalue:'',
-      barcodevalue:'',
-      count:''
+      barcodevalue:''
     }]);
   }
   
   const handleSave = async () => {
     const errors = {};
+    if (!formData.docno) {
+        errors.docno = 'Doc No is required';
+    }
+    if (!formData.documentDate) {
+      errors.documentDate = 'Document Date is required';
+    }
+    if (!formData.count) {
+      errors.count = 'Count is required';
+    }
     if (!formData.entryno) {
-      errors.entryno = 'Entry Number is required';
+      errors.entryno = 'Entry No is required';
     }
     let firstInvalidFieldRef = null;
 
@@ -226,7 +282,6 @@ const QrBargroup = () => {
     } else {
       const newTableErrors = childTableData.map((row, index) => {
         const rowErrors = {};
-        
         if (!row.partNo) {
           rowErrors.partNo = 'Part No is required';
           if (!firstInvalidFieldRef) firstInvalidFieldRef = lrNoDetailsRefs.current[index].partNo;
@@ -243,10 +298,6 @@ const QrBargroup = () => {
           rowErrors.barcodevalue = 'Bar Code Value is required';
           if (!firstInvalidFieldRef) firstInvalidFieldRef = lrNoDetailsRefs.current[index].barcodevalue;
         }
-        if (!row.count) {
-          rowErrors.count = 'Count is required';
-          if (!firstInvalidFieldRef) firstInvalidFieldRef = lrNoDetailsRefs.current[index].count;
-        }
 
         if (Object.keys(rowErrors).length > 0) childTableDataValid = false;
 
@@ -255,9 +306,72 @@ const QrBargroup = () => {
 
       setChildTableErrors(newTableErrors);
     }
-    setFieldErrors(errors);
-  };
 
+    if (!childTableDataValid || Object.keys(errors).length > 0) {
+     
+      if (firstInvalidFieldRef && firstInvalidFieldRef.current) {
+        firstInvalidFieldRef.current.focus();
+      }
+    } 
+
+    if (childTableDataValid) {
+      setIsLoading(true);
+      const childVO = childTableData.map((row) => ({        
+        // partNo: row.partNo,
+        // partDesc: row.partDesc,    
+        // qrcodevalue: row.qrcodevalue,
+        // barcodevalue: row.barcodevalue,
+        count: formData.count,
+        createdBy: loginUserName,
+        docDate: dayjs().format('YYYY-MM-DD'),
+        docId: row.docno,
+        entryNo: formData.entryno,
+        barCodeValue: row.barcodevalue,
+        partDescription: row.partDesc,
+        partNo: row.partNo,
+        qrCodeValue: row.qrcodevalue
+      }));
+
+      const saveFormData = {
+        ...(editId && { id: editId }),
+        createdBy: loginUserName,
+        qrBarCodeDetailsDTO: childVO,
+        // docDate: formData.docDate,
+        // entryNo: formData.entryno === '' ? null : formData.entryno,
+        // count: formData.count,
+        // docDate: dayjs().format('YYYY-MM-DD'),
+        // docId: formData.docno,
+        // entryNo: formData.entryno,
+        // barCodeValue:  ,
+        // partDescription: ,
+        // partNo: ,
+        // qrCodeValue: 
+      };
+
+      console.log('DATA TO SAVE IS:', saveFormData);
+      try {
+        const response = await apiCalls('put', `qrbarcode/createUpdateQrBarCode`, saveFormData);
+        if (response.status === true) {
+          console.log('Response:', response);
+          handleClear();
+          showToast('success', editId ? ' Qr Bar Code Updated Successfully' : 'Qr Bar Code created successfully');
+          getAllFillGrid();
+          setIsLoading(false);
+        } else {
+          showToast('error', response.paramObjectsMap.errorMessage || 'Qr Bar Code failed');
+          setIsLoading(false);
+        }
+      }
+       catch (error) {
+        console.error('Error:', error);
+        showToast('error', ' QrBar Code failed');
+        setIsLoading(false);
+      }
+    } else {
+      setFieldErrors(errors);
+    } 
+  };
+ 
   const handleTableClear = (table) => {
     if (table === 'childTableData') {
       setChildTableData([]);
@@ -271,7 +385,7 @@ const QrBargroup = () => {
 
   const handleFullGrid = () => {
     setModalOpen(true);
-    // getAllFillGrid();
+    getAllFillGrid();
   };
   const handleCloseModal = () => {
     setModalOpen(false);
@@ -287,16 +401,23 @@ const QrBargroup = () => {
   };
 
   const handleSubmitSelectedRows = async () => {
-    const selectedData = selectedRows.map((index) => modalTableData[index]);
-
+    const selectedData = selectedRows.map((index) => {
+      const data = modalTableData[index];
+      return {
+        ...data,
+        qrcodevalue: `${data.partNo}-${data.partDesc}`, 
+        barcodevalue: `${data.partNo}-${data.partDesc}` 
+      };
+    });
+  
     setChildTableData((prev) => [...prev, ...selectedData]);
-
-    console.log('Data selected:', selectedData);
-
+  
+    console.log('Data selected with QR and Barcode values:', selectedData);
+  
     setSelectedRows([]);
     setSelectAll(false);
     handleCloseModal();
-
+  
     try {
       await Promise.all(
         selectedData.map(async (data, idx) => {
@@ -305,11 +426,12 @@ const QrBargroup = () => {
               value: data.partNo
             }
           };
-
-          // await getPartNo(data.fromBin, data);
+  
+         // await getPartNo(data.fromBin, data);
           // await getGrnNo(data.fromBin, data.partNo, data);
           // await getBatchNo(data.fromBin, data.partNo, data.grnNo, data);
           // await getAvlQty(data.batchNo, data.fromBin, data.grnNo, data.partNo, data);
+  
           // handlePartNoChange(data, childTableData.length + idx, simulatedEvent);
         })
       );
@@ -317,6 +439,7 @@ const QrBargroup = () => {
       console.error('Error processing selected data:', error);
     }
   };
+  
   const handleBulkUploadOpen = () => {
     setUploadOpen(true); // Open dialog
   };
@@ -328,6 +451,10 @@ const QrBargroup = () => {
   const handleFileUpload = (event) => {
     console.log(event.target.files[0]);
   };
+
+  const handleGenerate = () =>{
+
+  }
 
   const handleSubmit = () => {
     console.log('Submit clicked');
@@ -342,25 +469,78 @@ const QrBargroup = () => {
               <ActionButton title="Clear" icon={ClearIcon} onClick={handleClear} />
               {!viewId && <ActionButton title="Save" icon={SaveIcon} isLoading={isLoading} onClick={handleSave} />}
               <ActionButton title="Upload" icon={CloudUploadIcon} onClick={handleBulkUploadOpen} />
+              <ActionButton title="Generate" icon={RiAiGenerate } onClick={handleGenerate} />
             </div>
           </div>
-          
+              {uploadOpen && (
+              <CommonBulkUpload
+                open={uploadOpen}
+                handleClose={handleBulkUploadClose}
+                title="Upload Files"
+                uploadText="Upload file"
+                downloadText="Sample File"
+                onSubmit={handleSubmit}
+                sampleFileDownload={sampleFile}
+                handleFileUpload={handleFileUpload}
+                apiUrl={`qrbarcode/ExcelUploadForQrBarCode?createdBy=${loginUserName}`}
+                screen="QrBarCode"
+              ></CommonBulkUpload>
+            )}
             <>
-              <div className="row">
-                  <div className="col-md-3 mb-3">
+            <div className="row">
+            <div className="col-md-3 mb-4">
                     <TextField
-                      label="Entry No"
+                      label="Doc No"
                       variant="outlined"
                       size="small"
                       fullWidth
-                      name="entryno"
-                      value={formData.entryno}
+                      name="docno"
+                      value={formData.docno}
                       onChange={handleInputChange}
-                      error={!!fieldErrors.entryno}
-                      helperText={fieldErrors.entryno}
+                      error={!!fieldErrors.docno}
+                      helperText={fieldErrors.docno}
                       disabled={viewId && true}
                     />
                   </div>
+                  <div className="col-md-3 mb-4">
+                    <TextField
+                      label="Document Date"
+                      variant="outlined"
+                      size="small"
+                      fullWidth
+                      name="documentDate"
+                      value={formData.documentDate}
+                      disabled={viewId && true}
+                    />
+                  </div>
+                      <div className="col-md-3 mb-3">
+                        <TextField
+                          label="Entry No"
+                          variant="outlined"
+                          size="small"
+                          fullWidth
+                          name="entryno"
+                          value={formData.entryno}
+                          onChange={handleInputChange}
+                          error={!!fieldErrors.entryno}
+                          helperText={fieldErrors.entryno}
+                          disabled={viewId && true}
+                        />
+                      </div>
+                      <div className="col-md-3 mb-3">
+                        <TextField
+                          label="Count"
+                          variant="outlined"
+                          size="small"
+                          fullWidth
+                          name="count"
+                          value={formData.count}
+                          onChange={handleInputChange}
+                          error={!!fieldErrors.count}
+                          helperText={fieldErrors.count}
+                          disabled={viewId && true}
+                        />
+                      </div>
                 </div>
 
                 <div className="row mt-2">
@@ -408,7 +588,6 @@ const QrBargroup = () => {
                                   <th className="px-2 py-2 text-white text-center">Part Desc *</th>
                                   <th className="px-2 py-2 text-white text-center">QrCode Value *</th>
                                   <th className="px-2 py-2 text-white text-center">BarCode Value *</th>
-                                  <th className="px-2 py-2 text-white text-center">Count *</th>
                                 </tr>
                               </thead>
                               {!viewId ? (
@@ -454,7 +633,7 @@ const QrBargroup = () => {
                                                 updatedTableData[index].partNo = e.target.value;
                                                 setChildTableData(updatedTableData);
                                               }}
-                                              style={{ width: '160px' }}
+                                              style={{ width: '180px' }}
                                               className={childTableErrors[index]?.partNo ? 'error form-control' : 'form-control'}
                                             />
                                             {childTableErrors[index]?.partNo && (
@@ -473,7 +652,7 @@ const QrBargroup = () => {
                                                 updatedTableData[index].partDesc = e.target.value;
                                                 setChildTableData(updatedTableData);
                                               }}
-                                              style={{ width: '160px' }}
+                                              style={{ width: '180px' }}
                                               className={childTableErrors[index]?.partDesc ? 'error form-control' : 'form-control'}
                                             />
                                             {childTableErrors[index]?.partDesc && (
@@ -492,7 +671,7 @@ const QrBargroup = () => {
                                                 updatedTableData[index].qrcodevalue = e.target.value;
                                                 setChildTableData(updatedTableData);
                                               }}
-                                              style={{ width: '150px' }}
+                                              style={{ width: '180px' }}
                                               className={childTableErrors[index]?.qrcodevalue ? 'error form-control' : 'form-control'}
                                             />
                                             {childTableErrors[index]?.qrcodevalue && (
@@ -511,7 +690,7 @@ const QrBargroup = () => {
                                                 updatedTableData[index].barcodevalue = e.target.value;
                                                 setChildTableData(updatedTableData);
                                               }}
-                                              style={{ width: '150px' }}
+                                              style={{ width: '180px' }}
                                               className={childTableErrors[index]?.barcodevalue ? 'error form-control' : 'form-control'}
                                             />
                                             {childTableErrors[index]?.barcodevalue && (
@@ -520,27 +699,6 @@ const QrBargroup = () => {
                                               </div>
                                             )}
                                           </td>
-
-                                          <td className="border px-2 py-2">
-                                            <input
-                                              type="text"
-                                              value={row.count}
-                                              onChange={(e) => {
-                                                const updatedTableData = [...childTableData];
-                                                updatedTableData[index].count = e.target.value;
-                                                setChildTableData(updatedTableData);
-                                              }}
-                                              style={{ width: '150px' }}
-                                              className={childTableErrors[index]?.count ? 'error form-control' : 'form-control'}
-                                            />
-                                            {childTableErrors[index]?.count && (
-                                              <div style={{ color: 'red', fontSize: '12px' }}>
-                                                {childTableErrors[index]?.count}
-                                              </div>
-                                            )}
-                                          </td>
-
-                                          
                                         </tr>
                                       ))
                                     )}
@@ -567,17 +725,83 @@ const QrBargroup = () => {
                         </div>
                       </div>
                     </div>
-
-                    
+                    <Dialog
+                      open={modalOpen}
+                      maxWidth={'md'}
+                      fullWidth={true}
+                      onClose={handleCloseModal}
+                      PaperComponent={PaperComponent}
+                      aria-labelledby="draggable-dialog-title"
+                    >
+                      <DialogTitle textAlign="center" style={{ cursor: 'move' }} id="draggable-dialog-title">
+                        <h6>Grid Details</h6>
+                      </DialogTitle>
+                      <DialogContent className="pb-0">
+                        <div className="row">
+                          <div className="col-lg-12">
+                            <div className="table-responsive">
+                              <table className="table table-bordered">
+                                <thead>
+                                  <tr style={{ backgroundColor: '#673AB7' }}>
+                                    <th className="px-2 py-2 text-white text-center" style={{ width: '68px' }}>
+                                      <Checkbox checked={selectAll} onChange={handleSelectAll} />
+                                    </th>
+                                    <th className="px-2 py-2 text-white text-center" style={{ width: '50px' }}>
+                                      S.No
+                                    </th>
+                                    <th className="table-header">Part No</th>
+                                    <th className="table-header">Part Description</th>
+                                    <th className="table-header">QrCode Value</th>
+                                    <th className="table-header">BarCode Value </th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {modalTableData?.map((row, index) => (
+                                    <tr key={row.id}>
+                                      <td className="border p-0 text-center">
+                                        <Checkbox
+                                          checked={selectedRows.includes(index)}
+                                          onChange={(e) => {
+                                            const isChecked = e.target.checked;
+                                            setSelectedRows((prev) => (isChecked ? [...prev, index] : prev.filter((i) => i !== index)));
+                                          }}
+                                        />
+                                      </td>
+                                      <td className="text-center">{index + 1}</td>
+                                      <td className="border px-2 py-2 text-center" style={{ whiteSpace: 'nowrap' }}>
+                                        {row.partNo || ''}
+                                      </td>
+                                      <td className="border px-2 py-2 text-center" style={{ whiteSpace: 'nowrap' }}>
+                                        {row.partDesc || ''}
+                                      </td>
+                                      <td className="border px-2 py-2 text-center" style={{ whiteSpace: 'nowrap' }}>
+                                        {row.qrcodevalue || ''}
+                                      </td>
+                                      <td className="border px-2 py-2 text-center" style={{ whiteSpace: 'nowrap' }}>
+                                        {row.barcodevalue || ''}
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+                        </div>
+                      </DialogContent>
+                      <DialogActions sx={{ p: '1.25rem' }} className="pt-0">
+                        <Button onClick={handleCloseModal}>Cancel</Button>
+                        <Button color="secondary" onClick={handleSubmitSelectedRows} variant="contained">
+                          Proceed
+                        </Button>
+                      </DialogActions>
+                    </Dialog>
                   </>
                 )}
               </Box>
             </div>
-          </>
-         
+          </>  
       </div>
     </>  
 )
 }
-
 export default QrBargroup
