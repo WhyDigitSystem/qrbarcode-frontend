@@ -1,11 +1,10 @@
 import React, { useEffect, useState,useRef } from 'react';
 import dayjs from 'dayjs';
-import QRCode from 'qrcode.react';
-import Barcode from 'react-barcode';
-import { QRCodeCanvas } from 'qrcode.react'; 
-import { Container, FormHelperText, Button, Grid, Typography } from '@mui/material';
-import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Box, TextField } from '@mui/material';
-
+import { QRCodeSVG } from 'qrcode.react';
+import JsBarcode from 'jsbarcode'; 
+import { Button, Typography, Box, TextField } from '@mui/material';
+import { Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle } from '@mui/material';
+import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Grid,Container, FormHelperText } from '@mui/material';
 
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -22,10 +21,6 @@ import AddIcon from '@mui/icons-material/Add';
 import GridOnIcon from '@mui/icons-material/GridOn';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { RiAiGenerate } from 'react-icons/ri';
-import Dialog from '@mui/material/Dialog';
-import DialogTitle from '@mui/material/DialogTitle';
-import DialogContent from '@mui/material/DialogContent';
-import DialogActions from '@mui/material/DialogActions';
 import Checkbox from '@mui/material/Checkbox';
 
 
@@ -57,11 +52,11 @@ const QrBargroup = () => {
     documentDate: ''
   });
   const [value, setValue] = useState(0);
-  const [listView, setListView] = useState(false);
   const [selectAll, setSelectAll] = useState(false);
   const [selectedRows, setSelectedRows] = useState([]);
   const [childTableData, setChildTableData] = useState([]);
   const [childTableErrors, setChildTableErrors] = useState([]);
+  const [open, setOpen] = useState(false);
   const [modalTableData, setModalTableData] = useState([
     {
       id: 1,
@@ -379,9 +374,6 @@ const QrBargroup = () => {
     }
   };
 
-  const handleView = () => {
-    setListView(!listView);
-  };
 
   const handleFullGrid = () => {
     setModalOpen(true);
@@ -452,13 +444,45 @@ const QrBargroup = () => {
     console.log(event.target.files[0]);
   };
 
-  const handleGenerate = () =>{
-
-  }
 
   const handleSubmit = () => {
     console.log('Submit clicked');
     handleBulkUploadClose();
+  };
+
+  const handleGenerateClose = () => {
+    setOpen(false);
+  };
+  const [qrCodeValue, setQrCodeValue] = useState('');
+  const [barCodeValue, setBarCodeValue] = useState('');
+  const [showCodes, setShowCodes] = useState(false); 
+
+  const  handleGenerate = () => {
+    setOpen(true);
+    // setIsLoading(true);
+    setTimeout(() => {
+      setQrCodeValue(qrCodeValue);
+      setBarCodeValue(barCodeValue); 
+      setIsLoading(false);
+    }, 1000);
+  };
+
+  useEffect(() => {
+    if (barCodeValue) {
+      JsBarcode('#barcode', barCodeValue, {
+        format: 'CODE128',
+        width: 2,
+        height: 60,
+        displayValue: true,
+      });
+    }
+  }, [barCodeValue]);
+
+  const handlePrint = () => {
+    setShowCodes(true);
+    setTimeout(() => {
+      window.print(); 
+    }, 100); 
   };
 
   return (
@@ -789,8 +813,8 @@ const QrBargroup = () => {
                         </div>
                       </DialogContent>
                       <DialogActions sx={{ p: '1.25rem' }} className="pt-0">
-                        <Button onClick={handleCloseModal}>Cancel</Button>
-                        <Button color="secondary" onClick={handleSubmitSelectedRows} variant="contained">
+                        <Button onClick={handleCloseModal} sx={{ color: '#673AB7' }}>Cancel</Button>
+                        <Button color="secondary" onClick={handleSubmitSelectedRows} variant="contained" sx={{ backgroundColor: '#673AB7' }}>
                           Proceed
                         </Button>
                       </DialogActions>
@@ -799,7 +823,52 @@ const QrBargroup = () => {
                 )}
               </Box>
             </div>
-          </>  
+          </> 
+          <div>
+            {open && (
+              <Dialog
+                open={open}
+                maxWidth={'md'}
+                fullWidth={true}
+                onClose={handleGenerateClose}
+                PaperComponent={PaperComponent}
+                aria-labelledby="draggable-dialog-title"
+              >
+                <DialogTitle>Generated Codes</DialogTitle>
+                <DialogContent>
+                  <table className="table table-bordered">
+                    <thead>
+                      <tr style={{ backgroundColor: '#673AB7' }}>
+                        <th className="table-header">QrCode Value</th>
+                        <th className="table-header">BarCode Value</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {modalTableData.map((row, index) => (
+                        <tr key={row.id}>
+                          <td className="border px-2 py-2 text-center" style={{ whiteSpace: 'nowrap' }}>
+                            <QRCodeSVG value={row.qrcodevalue} size={64} />
+                          </td>
+                          <td className="border px-2 py-2 text-center" style={{ whiteSpace: 'nowrap' }}>
+                            <svg id={`barcode-${index}`} value={row.barcodevalue}></svg>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </DialogContent>
+
+                <DialogActions>
+                  <Button onClick={handleGenerateClose} sx={{ color: '#673AB7' }}>
+                    Close
+                  </Button>
+                  <Button onClick={handlePrint} variant="contained"sx={{ backgroundColor: '#673AB7' }}>
+                    Print
+                  </Button>
+                </DialogActions>
+              </Dialog>
+            )}
+          </div> 
       </div>
     </>  
 )
