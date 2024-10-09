@@ -41,6 +41,8 @@ import pages from './pages';
 import utilities from './utilities';
 import other from './other';
 import QrBarCode from './QrBarCode';
+import Invoice from './invoice';
+
 
 const loginUserName = (localStorage.getItem('userName') || '').toLowerCase();
 const loginUserType = localStorage.getItem('userType');
@@ -71,7 +73,8 @@ const menuItems = {
   items: [
     dashboard,
     ...(loginUserType === 'admin' ? [] : []),
-    QrBarCode
+    QrBarCode,
+    Invoice
     // company,
     // basicMasters,
     // RolesAndResponsibilities,
