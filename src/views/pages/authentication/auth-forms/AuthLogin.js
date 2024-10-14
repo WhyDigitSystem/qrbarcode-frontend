@@ -318,7 +318,7 @@ const FirebaseLogin = ({ ...others }) => {
       userName: values.email
     };
     try {
-      const response = await Axios.post(`${process.env.REACT_APP_API_URL}/api/auth/login`, userData, {
+      const response = await Axios.post(`${process.env.REACT_APP_API_URL}api/auth/login`, userData, {
         headers: {
           'Content-Type': 'application/json'
         }
@@ -333,6 +333,7 @@ const FirebaseLogin = ({ ...others }) => {
         // localStorage.setItem('orgId', response.data.paramObjectsMap.userVO.orgId); // Replace with the actual token
         localStorage.setItem('userId', response.data.paramObjectsMap.userVO.userId);
         localStorage.setItem('userName', response.data.paramObjectsMap.userVO.userName);  
+        localStorage.setItem('orgId', response.data.paramObjectsMap.userVO.orgId);  
         // localStorage.setItem('userType', response.data.paramObjectsMap.userVO.userType); 
         // localStorage.setItem('token', response.data.paramObjectsMap.userVO.token); 
         // localStorage.setItem('tokenId', response.data.paramObjectsMap.userVO.tokenId);
