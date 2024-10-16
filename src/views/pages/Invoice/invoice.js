@@ -11,6 +11,7 @@ import InvoicePdfGen from './InvoicePdfGen';
 import Box from '@mui/material/Box';
 import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
+import apiCalls from 'apicall';
 import Typography from '@mui/material/Typography';
 
 import {
@@ -47,18 +48,16 @@ const Invoice = () => {
   const [listView, setListView] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const listViewColumns = [
-    { accessorKey: 'qrBarCodeValue', header: 'Qr/BarCodeGenerator', size: 140 },
-    {
-      accessorKey: 'count',
-      header: 'Count',
-      size: 140
-    },
-    { accessorKey: 'active', header: 'Active', size: 140 }
+    // { accessorKey: 'bankName', header: 'Bank Name', size: 140
+    
+    { accessorKey: 'invoiceNo', header: 'Invoice Num', size: 140 },
+    { accessorKey: 'invoiceDate', header: 'Invoice Date', size: 140 },
+    { accessorKey: 'dueDate',header: 'Due Date',size: 140},
   ];
   const [listViewData, setListViewData] = useState([]);
 
   useEffect(() => {
-    // getAllQrBarCode();
+    getAllTaxInvoice();
   }, []);
 
   const [errors, setErrors] = useState({});
@@ -110,6 +109,24 @@ const Invoice = () => {
     qty: '',
     name: ''
   });
+
+  const getAllTaxInvoice = async () => {
+    try {
+      const response = await apiCalls(
+        'get',
+        `master/getAllTaxInvoice`
+      );
+      console.log('API Response:', response);
+
+      if (response.status === true) {
+        setListViewData(response.paramObjectsMap.taxInvoiceVO);
+      } else {
+        console.error('API Error:', response);
+      }
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    }
+  };
 
   const handleSave = () => {
     const errors = {};

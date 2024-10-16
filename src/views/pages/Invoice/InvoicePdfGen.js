@@ -1,4 +1,4 @@
-import React from 'react'
+import React from 'react';
 import DownloadIcon from '@mui/icons-material/Download';
 import { Button, Dialog, DialogActions, DialogContent, DialogTitle } from '@mui/material';
 import html2canvas from 'html2canvas';
@@ -6,7 +6,7 @@ import jsPDF from 'jspdf';
 import { useEffect, useState } from 'react';
 
 const InvoicePdfGen = ({ row, callBackFunction }) => {
-    const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(false);
   const [currentDateTime, setCurrentDateTime] = useState('');
 
   // Function to open the dialog
@@ -252,7 +252,7 @@ const InvoicePdfGen = ({ row, callBackFunction }) => {
         </Button>
       </DialogActions>
     </Dialog>
-  )
-}
+  );
+};
 
-export default InvoicePdfGen
+export default InvoicePdfGen;
