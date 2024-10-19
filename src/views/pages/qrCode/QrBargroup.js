@@ -237,9 +237,7 @@ const QrBargroup = () => {
         [name]: value
       });
       setFieldErrors({ ...fieldErrors, [name]: '' });
-      // setChildTableErrors({...modalTableErrors, [name]: ''})
 
-      // Update the cursor position after the input change
       if (type === 'text' || type === 'textarea') {
         setTimeout(() => {
           const inputElement = document.getElementsByName(name)[0];
@@ -328,21 +326,20 @@ const QrBargroup = () => {
       });
     }
   };
-  
+
   const handleDeleteRow = (id, table, setTable, errorTable, setErrorTable) => {
-    console.log("Row ID to delete:", id);
+    console.log('Row ID to delete:', id);
 
     const rowIndex = table.findIndex((row) => row.id === id);
     if (rowIndex !== -1) {
       const updatedData = table.filter((row) => row.id !== id);
       const updatedErrors = errorTable.filter((_, index) => index !== rowIndex);
-      console.log("Updated Table Data:", updatedData);
-      console.log("Updated Errors:", updatedErrors);
+      console.log('Updated Table Data:', updatedData);
+      console.log('Updated Errors:', updatedErrors);
       setTable(updatedData);
       setErrorTable(updatedErrors);
-    }
-    else {
-      console.log("Row not found!");
+    } else {
+      console.log('Row not found!');
     }
   };
 
@@ -444,6 +441,7 @@ const QrBargroup = () => {
           handleClear();
           // showToast('success', viewId ? ' Qr Bar Code Updated Successfully' : 'Qr Bar Code created successfully');
           getAllFillGrid();
+          getAllQrBarCode();
           setIsLoading(false);
         } else {
           showToast('error', response.paramObjectsMap.errorMessage || 'Qr Bar Code Creation failed');
@@ -556,39 +554,13 @@ const QrBargroup = () => {
   };
   const [showCodes, setShowCodes] = useState(false);
 
-  // const handleGenerate = async () => {
-  //   const count = parseInt(formData.count, 10);
-  //   const isValid = await handleSave();
-
-  //   if (!isValid) {
-  //     return;
-  //   }
-  //   let updatedTableData = [];
-
-  //   setTimeout(() => {
-  //     childTableData.forEach((row) => {
-  //       for (let i = 0; i < count; i++) {
-  //         updatedTableData.push({
-  //           ...row,
-  //           qrcodevalue: generateQrCode || generateBoth ? row.qrcodevalue : '',
-  //           barcodevalue: generateBarCode || generateBoth ? row.barcodevalue : ''
-  //         });
-  //       }
-  //     });
-
-  //     setModalTableData(updatedTableData);
-  //     setOpen(true);
-  //   }, 1000);
-  // };
-
   const handleGenerate = async () => {
     const count = parseInt(formData.count, 10);
-    // const isValid = await
-    handleSave();
-
-    // if (!isValid) {
-    //   return;
-    // }
+  
+    if (!viewId) {
+      // const isValid = await 
+      handleSave();
+    }
 
     let updatedTableData = [];
 
@@ -807,22 +779,22 @@ const QrBargroup = () => {
                                     <tr key={row.id}>
                                       {!viewId && (
                                         <td className="border px-2 py-2 text-center">
-                                        <ActionButton
-                                          title="Delete"
-                                          icon={DeleteIcon}
-                                          onClick={() =>{
-                                            console.log("Row data:", row);
+                                          <ActionButton
+                                            title="Delete"
+                                            icon={DeleteIcon}
+                                            onClick={() => {
+                                              console.log('Row data:', row);
 
-                                            handleDeleteRow(
-                                              row.id,
-                                              childTableData,
-                                              setChildTableData,
-                                              childTableErrors,
-                                              setChildTableErrors
-                                            )
-                                          }}
-                                        />
-                                      </td>
+                                              handleDeleteRow(
+                                                row.id,
+                                                childTableData,
+                                                setChildTableData,
+                                                childTableErrors,
+                                                setChildTableErrors
+                                              );
+                                            }}
+                                          />
+                                        </td>
                                       )}
                                       <td className="text-center">
                                         <div className="pt-2">{index + 1}</div>

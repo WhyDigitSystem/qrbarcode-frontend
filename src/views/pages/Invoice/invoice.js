@@ -389,39 +389,38 @@ const Invoice = () => {
 
   const handleInputChange = (event, index = null) => {
     const { name, value } = event.target;
-    const addressRegex = /^[a-zA-Z0-9\s,.-]*$/;
-    const codeRegex = /^[a-zA-Z0-9#_\-\/\\]*$/;
-    const numberRegex = /^\d*\.?\d*$/;
-    const taxPercentageRegex = /^(100(\.0{1,2})?|[1-9]?\d(\.\d{1,2})?)$/;
-    const ifscRegex = /^[A-Z]{4}0[A-Z0-9]{6}$/;
+    // const addressRegex = /^[a-zA-Z0-9\s,.-]*$/;
+    // const codeRegex = /^[a-zA-Z0-9#_\-\/\\]*$/;
+    // const numberRegex = /^\d*\.?\d*$/;
+    // const taxPercentageRegex = /^(100(\.0{1,2})?|[1-9]?\d(\.\d{1,2})?)$/;
+    // const ifscRegex = /^[A-Z]{4}0[A-Z0-9]{6}$/;
   
-    let errors = {}; // Temporarily store errors
+    let errors = {}; 
   
     // Validation checks
-    if ((name === 'invoiceNo' || name === 'term') && !codeRegex.test(value)) {
-      errors[name] = 'Invalid Format';
-    }
-    if ((name === 'billToAddress' || name === 'shipToAddress' || name === 'companyAddress') && !addressRegex.test(value)) {
-      errors[name] = 'Invalid Format';
-    }
-    if ((name === 'cgst' || name === 'sgst' || name === 'igst' || name === 'total' || name === 'subTotal' || name === 'accountNo') && !numberRegex.test(value)) {
-      errors[name] = 'Invalid Format';
-    }
-    if (name === 'taxpercentage' && !taxPercentageRegex.test(value)) {
-      errors[name] = 'Invalid Format';
-    }
-    if (name === 'iFSC' && !ifscRegex.test(value)) {
-      errors[name] = 'Invalid Format';
-    }
+    // if ((name === 'invoiceNo' || name === 'term') && !codeRegex.test(value)) {
+    //   errors[name] = 'Invalid Format';
+    // }
+    // if ((name === 'billToAddress' || name === 'shipToAddress' || name === 'companyAddress') && !addressRegex.test(value)) {
+    //   errors[name] = 'Invalid Format';
+    // }
+    // if ((name === 'cgst' || name === 'sgst' || name === 'igst' || name === 'total' || name === 'subTotal' || name === 'accountNo') && !numberRegex.test(value)) {
+    //   errors[name] = 'Invalid Format';
+    // }
+    // if (name === 'taxpercentage' && !taxPercentageRegex.test(value)) {
+    //   errors[name] = 'Invalid Format';
+    // }
+    // if (name === 'iFSC' && !ifscRegex.test(value)) {
+    //   errors[name] = 'Invalid Format';
+    // }
   
-    // Update the field errors
     setFieldErrors((prevErrors) => ({ ...prevErrors, ...errors }));
   
     // Proceed with updating form data if no errors
     if (Object.keys(errors).length === 0) {
       setFormData((prevData) => ({
         ...prevData,
-        [name]: name === 'iFSC' ? value.toUpperCase() : value, // Uppercase only for iFSC
+        // [name]: name === 'iFSC' ? value.toUpperCase() : value, // Uppercase only for iFSC
       }));
     }
   
