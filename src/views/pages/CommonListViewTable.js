@@ -1,12 +1,13 @@
 import EditIcon from '@mui/icons-material/Edit';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
+import { FaEye } from "react-icons/fa";
 import { Box, Chip, Stack } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { MaterialReactTable } from 'material-react-table';
 import { useEffect, useState } from 'react';
 import ActionButton from 'utils/ActionButton';
 
-const CommonListViewTable = ({ data, columns, blockEdit, toEdit, disableEditIcon, viewIcon, isPdf, GeneratePdf }) => {
+const CommonListViewTable = ({ data, columns, blockEdit,blockView, toEdit, disableEditIcon,disableViewIcon, viewIcon, isPdf, toView, GeneratePdf }) => {
   const [tableData, setTableData] = useState(data || []);
   const [orgId, setOrgId] = useState(localStorage.getItem('orgId'));
 
@@ -31,10 +32,14 @@ const CommonListViewTable = ({ data, columns, blockEdit, toEdit, disableEditIcon
     marginRight: '5px'
   };
 
-  const handleButtonClick = (row) => {
+  const handleButtonClickEdit = (row) => {
     toEdit(row);
   };
 
+  const handleButtonClickView = (row) => {
+    toView(row);
+  };
+  
   useEffect(() => {
     console.log('BlockEdit', blockEdit);
   }, []);
@@ -71,7 +76,8 @@ const CommonListViewTable = ({ data, columns, blockEdit, toEdit, disableEditIcon
   const renderRowActions = ({ row }) => (
     <Box sx={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
       {isPdf && <ActionButton title="Pdf" icon={PictureAsPdfIcon} onClick={() => GeneratePdf(row)} />}
-      {!disableEditIcon && <ActionButton title="Edit" icon={EditIcon} onClick={() => handleButtonClick(row)} />}
+      {!disableEditIcon && <ActionButton title="Edit" icon={EditIcon} onClick={() => handleButtonClickEdit(row)} />}
+      {!disableViewIcon && <ActionButton title="View" icon={FaEye} onClick={() => handleButtonClickView(row)} />}
     </Box>
   );
 

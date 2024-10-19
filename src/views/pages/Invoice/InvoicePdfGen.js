@@ -87,8 +87,8 @@ const InvoicePdfGen = ({ row, callBackFunction }) => {
               color: '#333'
             }}
           >
-            <div>EFit WMS</div>
-            <div>Putaway</div>
+            <div>EFit QrBar Code</div>
+            <div>Invoice</div>
             <div>{localStorage.getItem('branch')}</div>
           </div>
 
@@ -119,10 +119,10 @@ const InvoicePdfGen = ({ row, callBackFunction }) => {
                 <strong>Client:</strong> {row.client}
               </div>
               <div>
-                <strong>GRN No:</strong> {row.grnNo}
+                <strong>DUE Date:</strong> {row.dueDate}
               </div>
               <div>
-                <strong>GRN Date:</strong> {row.grnDate}
+                <strong>INVOICE Date:</strong> {row.invoiceDate}
               </div>
             </div>
           </div>
