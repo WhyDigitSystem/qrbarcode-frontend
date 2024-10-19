@@ -1,3 +1,5 @@
+import axios from 'axios';
+
 import React, { useState, useEffect } from 'react';
 import ActionButton from 'utils/ActionButton';
 import ClearIcon from '@mui/icons-material/Clear';
@@ -31,10 +33,12 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import DeleteIcon from '@mui/icons-material/Delete';
 
 import dayjs from 'dayjs';
+import { showToast } from 'utils/toast-component';
+import { ToastContainer } from 'react-toastify';
 
 const Invoice = () => {
-  const [orgId, setOrgId] = useState(localStorage.getItem('orgId'));
   const [loginUserName, setLoginUserName] = useState(localStorage.getItem('userName'));
+  const [orgId, setOrgId] = useState(localStorage.getItem('orgId'));
 
   const [file, setFile] = useState(null);
   const [downloadPdf, setDownloadPdf] = useState(false);
@@ -42,6 +46,8 @@ const Invoice = () => {
   const [inputValue, setInputValue] = useState('');
   const [error, setError] = useState('');
   const [editId, setEditId] = useState('');
+  const [childTableErrors, setChildTableErrors] = useState([]);
+  const [childTableData, setChildTableData] = useState([]);
 
   const [value, setValue] = useState(0);
 
@@ -49,10 +55,10 @@ const Invoice = () => {
   const [editMode, setEditMode] = useState(false);
   const listViewColumns = [
     // { accessorKey: 'bankName', header: 'Bank Name', size: 140
-    
+
     { accessorKey: 'invoiceNo', header: 'Invoice Num', size: 140 },
     { accessorKey: 'invoiceDate', header: 'Invoice Date', size: 140 },
-    { accessorKey: 'dueDate',header: 'Due Date',size: 140},
+    { accessorKey: 'dueDate', header: 'Due Date', size: 140 }
   ];
   const [listViewData, setListViewData] = useState([]);
 
@@ -60,64 +66,133 @@ const Invoice = () => {
     getAllTaxInvoice();
   }, []);
 
-  const [errors, setErrors] = useState({});
+  // const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [text, setText] = useState('');
   const [formData, setFormData] = useState({
-    chooseFile: '',
-    invoiceNo: '',
-    address: '',
-    invoiceDate: '',
-    terms: '',
+    billToAddress: '',
+    cgst: '',
+    companyAddress: '',
     dueDate: '',
+    gstType: '',
+    igst: '',
+    invoiceDate: '',
+    invoiceNo: '',
+    notes: '',
     serviceMonth: '',
-    billTo: '',
-    shipTo: '',
-    tax1: '',
-    tax2: '',
+    sgst: '',
+    shipToAddress: '',
+    subTotal: '',
+    termsAndConditions: '',
+    total: '',
+    // Bank Details
     bankName: '',
     accountName: '',
     accountNo: '',
-    iFSC: '',
-    // Table
-    amount: '',
-    rate: '',
-    qty: '',
-    name: ''
+    iFSC: ''
   });
+
+  const [modalTableData, setModalTableData] = useState([
+    {
+      id: 1,
+      description: '',
+      amount: '',
+      quantity: '',
+      rate: ''
+    }
+  ]);
+
   const [rows, setRows] = useState([]);
+  const [viewId, setViewId] = useState('');
 
   const [fieldErrors, setFieldErrors] = useState({
-    chooseFile: '',
-    invoiceNo: '',
-    address: '',
-    invoiceDate: '',
-    terms: '',
+    billToAddress: '',
+    cgst: '',
+    companyAddress: '',
     dueDate: '',
+    gstType: '',
+    igst: '',
+    invoiceDate: '',
+    invoiceNo: '',
+    notes: '',
     serviceMonth: '',
-    billTo: '',
-    shipTo: '',
-    tax1: '',
-    tax2: '',
+    sgst: '',
+    shipToAddress: '',
+    subTotal: '',
+    termsAndConditions: '',
+    total: '',
+    // Bank Details
     bankName: '',
     accountName: '',
     accountNo: '',
-    iFSC: '',
-    // Table
-    amount: '',
-    rate: '',
-    qty: '',
-    name: ''
+    iFSC: ''
   });
+  const [productLinesErrorsTable, setProductLinesErrorsTable] = useState({
+    description: '',
+    amount: '',
+    quantity: '',
+    rate: ''
+  });
+
+  const handleAddRow = () => {
+    console.log('THE HANDLE ADD ROW FUNCTION IS WORKING');
+
+    if (isLastRowEmpty(childTableData)) {
+      displayRowError(childTableData);
+      console.log('Last Row is Empty');
+      return;
+    }
+    console.log('the ok');
+
+    const newRow = {
+      id: Date.now(),
+      description: '',
+      amount: '',
+      quantity: '',
+      rate: ''
+    };
+    setChildTableData([...childTableData, newRow]);
+    setChildTableErrors([
+      ...childTableErrors,
+      {
+        description: '',
+        amount: '',
+        quantity: '',
+        rate: ''
+      }
+    ]);
+  };
+
+  const isLastRowEmpty = (table) => {
+    const lastRow = table[table.length - 1];
+    if (!lastRow) return false;
+
+    if (table === childTableData) {
+      return !lastRow.partDesc || !lastRow.partNo || !lastRow.qrcodevalue || !lastRow.barcodevalue || !lastRow.batchno;
+    }
+    return false;
+  };
+
+  const displayRowError = (table) => {
+    if (table === childTableData) {
+      setChildTableErrors((prevErrors) => {
+        const newErrors = [...prevErrors];
+        newErrors[table.length - 1] = {
+          ...newErrors[table.length - 1],
+          description: !table[table.length - 1].description ? 'description is required' : '',
+          quantity: !table[table.length - 1].quantity ? 'quantity is required' : '',
+          rate: !table[table.length - 1].rate ? 'rate is required' : '',
+          amount: !table[table.length - 1].amount ? 'amount is required' : ''
+        };
+        return newErrors;
+      });
+    }
+  };
 
   const getAllTaxInvoice = async () => {
     try {
-      const response = await apiCalls(
-        'get',
-        `master/getAllTaxInvoice`
-      );
+      const response = await apiCalls('get', `master/getAllTaxInvoice`);
       console.log('API Response:', response);
-
       if (response.status === true) {
         setListViewData(response.paramObjectsMap.taxInvoiceVO);
       } else {
@@ -128,80 +203,112 @@ const Invoice = () => {
     }
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const errors = {};
+    if (!formData.cgst) errors.cgst = 'cgst is required';
+    if (!formData.termsAndConditions) errors.termsAndConditions = 'termsAndConditions is required';
+    if (!formData.sgst) errors.sgst = 'sgst is required';
+    if (!formData.gstType) errors.gstType = 'gstType is required';
+    if (!formData.notes) errors.notes = 'notes is required';
+    if (!formData.igst) errors.igst = 'igst is required';
+    if (!formData.subTotal) errors.subTotal = 'subTotal is required';
+    if (!formData.total) errors.total = 'total is required';
+    if (!formData.bankName) errors.bankName = 'Bank Name is required';
+    if (!formData.accountName) errors.accountName = 'Account Name is required';
+    if (!formData.accountNo) errors.accountNo = 'Account No is required';
+    if (!formData.iFSC) errors.iFSC = 'IFSC Code is required';
+    if (!formData.invoiceNo) errors.invoiceNo = 'Invoice Num is required';
+    if (!formData.companyAddress) errors.companyAddress = 'Address is required';
+    if (!formData.invoiceDate) errors.invoiceDate = 'Invoice Date is required';
+    if (!formData.dueDate) errors.dueDate = 'Due Date is required';
+    if (!formData.serviceMonth) errors.serviceMonth = 'Service Month is required';
+    if (!formData.billToAddress) errors.billToAddress = 'Bill To Address is required';
+    if (!formData.shipToAddress) errors.shipToAddress = 'Ship To Address is required';
 
-    if (!formData.invoiceNo) {
-      errors.invoiceNo = 'Invoice number is required';
-    }
-    if (!formData.address) {
-      errors.address = 'Address is required';
-    }
+    let childTableDataValid = true;
+    if (!childTableData || !Array.isArray(childTableData) || childTableData.length === 0) {
+      childTableDataValid = false;
+      setChildTableErrors([{ general: 'Table Data is required' }]);
+    } else {
+      const newTableErrors = childTableData.map((row, index) => {
+        const rowErrors = {};
+        if (!row.amount) rowErrors.amount = 'amount is required';
+        if (!row.rate) rowErrors.rate = 'rate is required';
+        if (!row.quantity) rowErrors.quantity = 'quantity is required';
+        if (!row.description) rowErrors.description = 'description is required';
 
-    if (!formData.terms) {
-      errors.terms = 'Terms is required';
-    }
-    if (!formData.invoiceDate) {
-      errors.invoiceDate = 'invoiceDate is required';
-    }
-    if (!formData.dueDate) {
-      errors.dueDate = 'dueDate is required';
-    }
-    if (!formData.serviceMonth) {
-      errors.serviceMonth = 'serviceMonth is required';
-    }
-    if (!formData.billTo) {
-      errors.billTo = 'billTo is required';
-    }
-    if (!formData.shipTo) {
-      errors.shipTo = 'shipTo is required';
-    }
-    if (!formData.tax1) {
-      errors.tax1 = 'tax1 is required';
-    }
-    if (!formData.tax2) {
-      errors.tax2 = 'tax2 is required';
-    }
-    if (!formData.bankName) {
-      errors.bankName = 'bankName is required';
-    }
-    if (!formData.accountName) {
-      errors.accountName = 'accountName is required';
-    }
-    if (!formData.accountNo) {
-      errors.accountNo = 'accountNo is required';
-    }
-    if (!formData.iFSC) {
-      errors.iFSC = 'iFSC is required';
-    }
+        if (Object.keys(rowErrors).length > 0) {
+          childTableDataValid = false;
+        }
 
-    // Table
-    if (!formData.amount) {
-      errors.amount = 'amount is required';
+        return rowErrors;
+      });
+
+      setChildTableErrors(newTableErrors);
     }
-    if (!formData.rate) {
-      errors.rate = 'rate is required';
-    }
-    if (!formData.qty) {
-      errors.qty = 'qty is required';
-    }
-    if (!formData.tax2) {
-      errors.tax2 = 'name is required';
+    if (!childTableDataValid || Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      return false;
     }
 
-    if (Object.keys(errors).length === 0) {
+    if (childTableDataValid) {
       setIsLoading(true);
+      const childVO = childTableData.map((row) => ({
+        amount: row.amount,
+        description: row.description,
+        quantity: row.quantity,
+        rate: row.rate
+      }));
+
       const saveFormData = {
         ...(editId && { id: editId }),
-        active: formData.active,
+        createdBy: loginUserName,
+        orgId: 1,
+        productLines: childVO,
+
+        accountName: formData.accountName,
+        accountNo: formData.accountNo,
+        bankName: formData.bankName,
+        billToAddress: formData.billToAddress,
+        cgst: formData.cgst,
+        companyAddress: formData.companyAddress,
+        dueDate: formData.dueDate,
+        gstType: formData.gstType,
+        ifsc: formData.iFSC,
+        igst: formData.igst,
+        invoiceDate: formData.invoiceDate,
         invoiceNo: formData.invoiceNo,
-        address: formData.address,
-        orgId: orgId,
-        createdby: loginUserName
+        notes: formData.notes,
+        serviceMonth: formData.serviceMonth,
+        sgst: formData.sgst,
+        shipToAddress: formData.shipToAddress,
+        subTotal: formData.subTotal,
+        termsAndConditions: formData.termsAndConditions,
+        total: formData.total
       };
+
+      console.log('DATA TO SAVE IS:', saveFormData);
+      try {
+        console.log('handlesave try working');
+        const response = await apiCalls('put', `master/createUpdateTaxInvoice`, saveFormData);
+        if (response.status === true) {
+          console.log('Response:', response);
+          handleClear();
+          showToast('success', editId ? ' Invoice Updated Successfully' : 'Invoice created successfully');
+          setIsLoading(false);
+        } else {
+          showToast('error', response.paramObjectsMap.message || 'Invoice Creation failed');
+          setIsLoading(false);
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        showToast('error', ' Invoice failed');
+        setIsLoading(false);
+      }
     } else {
       setFieldErrors(errors);
     }
+    return true;
   };
 
   const handleGenerate = () => {};
@@ -260,55 +367,57 @@ const Invoice = () => {
   };
   const handleClear = () => {
     setFormData({
-      chooseFile: '',
-      invoiceNo: '',
-      address: '',
-      invoiceDate: '',
-      terms: '',
+      billToAddress: '',
+      cgst: '',
+      companyAddress: '',
       dueDate: '',
+      gstType: '',
+      igst: '',
+      invoiceDate: '',
+      invoiceNo: '',
+      notes: '',
       serviceMonth: '',
-      billTo: '',
-      shipTo: '',
-      tax1: '',
-      tax2: '',
+      sgst: '',
+      shipToAddress: '',
+      subTotal: '',
+      termsAndConditions: '',
+      total: '',
+      // Bank Details
       bankName: '',
       accountName: '',
       accountNo: '',
-      iFSC: '',
-      amount: '',
-      rate: '',
-      qty: '',
-      name: ''
+      iFSC: ''
     });
     setFieldErrors({
-      chooseFile: '',
-      invoiceNo: '',
-      address: '',
-      invoiceDate: '',
-      terms: '',
+      billToAddress: '',
+      cgst: '',
+      companyAddress: '',
       dueDate: '',
+      gstType: '',
+      igst: '',
+      invoiceDate: '',
+      invoiceNo: '',
+      notes: '',
       serviceMonth: '',
-      billTo: '',
-      shipTo: '',
-      tax1: '',
-      tax2: '',
+      sgst: '',
+      shipToAddress: '',
+      subTotal: '',
+      termsAndConditions: '',
+      total: '',
+      // Bank Details
       bankName: '',
       accountName: '',
       accountNo: '',
-      iFSC: '',
-      amount: '',
-      rate: '',
-      qty: '',
-      name: ''
+      iFSC: ''
     });
-    setErrors({});
+    setChildTableErrors([]);
+    setChildTableData([]);
   };
 
-  // //
   const handleTapChange = (event, newValue) => {
     setValue(newValue);
   };
-  const getCountryById = () => {
+  const getTaxInvoiceById = () => {
     setListView(false);
   };
   const handleView = () => {
@@ -324,6 +433,7 @@ const Invoice = () => {
 
   return (
     <>
+      {/* <ToastContainer /> */}
       <div className="card w-full p-6 bg-base-100 shadow-xl" style={{ padding: '20px', borderRadius: '10px' }}>
         <div className="row d-flex ml">
           <div className="d-flex flex-wrap justify-content-start mb-2" style={{ marginBottom: '20px' }}>
@@ -339,7 +449,7 @@ const Invoice = () => {
               data={listViewData}
               columns={listViewColumns}
               blockEdit={true}
-              toEdit={getCountryById}
+              toEdit={getTaxInvoiceById}
               isPdf={true}
               GeneratePdf={GeneratePdf}
             />
@@ -347,233 +457,217 @@ const Invoice = () => {
           </div>
         ) : (
           <>
-            <div>
-              <div className="row">
-                <div className="col-md-6">
-                  <div className="row">
-                    <div className="col-md-6">
-                      <p className="mt-4 ">Logo Upload</p>
-                    </div>
-                    <div className="col-md-6">
-                      <TextField
-                        size="small"
-                        fullWidth
-                        type="file"
-                        value={formData.chooseFile}
-                        name="chooseFile"
-                        onChange={handleFileChange}
-                        accept="image/*"
-                        style={{ marginTop: '10px' }}
-                      />
-                      {file && <p>Selected file: {file.name}</p>}
-                    </div>
-                  </div>
-                  <div className="row">
-                    <div className="col-md-6">
-                      <p className="mt-4 ">Invoice No</p>
-                    </div>
-                    <div className="col-md-6">
-                      <TextField
-                        size="small"
-                        fullWidth
-                        label="InVoiceNo"
-                        margin="normal"
-                        name="invoiceNo"
-                        value={formData.invoiceNo}
-                        onChange={handleInputChange}
-                        error={!!fieldErrors.invoiceNo}
-                        helperText={fieldErrors.invoiceNo}
-                      />
-                      {errors.invoiceNo && <span style={{ color: 'red' }}>{errors.invoiceNo}</span>}
-                    </div>
-                  </div>
-                  <div className="row">
-                    <div className="col-md-6">
-                      <p className="mt-4 ">Terms</p>
-                    </div>
-                    <div className="col-md-6">
-                      <TextareaAutosize
-                        id="textarea"
-                        className="form-control mb-1"
-                        value={formData.address}
-                        name="address"
-                        onChange={handleInputChange}
-                        rows="5"
-                        placeholder="Terms"
-                        style={{ height: '18px' }}
-                        error={!!fieldErrors.terms}
-                        helperText={fieldErrors.terms}
-                      />
-                      {errors.terms && <span style={{ color: 'red' }}>{errors.terms}</span>}
-                    </div>
-                  </div>
-                  <div className="row">
-                    <div className="col-md-6">
-                      <p className="mt-4 ">Service Month</p>
-                    </div>
-                    <div className="col-md-6">
-                      <TextField
-                        size="small"
-                        fullWidth
-                        label="Service Month"
-                        margin="normal"
-                        name="serviceMonth"
-                        value={formData.serviceMonth}
-                        onChange={handleInputChange}
-                        error={!!fieldErrors.serviceMonth}
-                        helperText={fieldErrors.serviceMonth}
-                      />
-                      {errors.serviceMonth && <span style={{ color: 'red' }}>{errors.serviceMonth}</span>}
-                    </div>
-                  </div>
-                  <div className="row">
-                    <div className="col-md-6">
-                      <p className="mt-4 ">Ship To</p>
-                    </div>
-                    <div className="col-md-6">
-                      <TextField
-                        size="small"
-                        fullWidth
-                        label="Ship To"
-                        margin="normal"
-                        name="shipTo"
-                        value={formData.shipTo}
-                        onChange={handleInputChange}
-                        error={!!fieldErrors.shipTo}
-                        helperText={fieldErrors.shipTo}
-                      />
-                      {errors.shipTo && <span style={{ color: 'red' }}>{errors.shipTo}</span>}
-                    </div>
-                  </div>
-                  <div className="row">
-                    <div className="col-md-6">
-                      <p className="mt-4 ">Tax 2</p>
-                    </div>
-                    <div className="col-md-6">
-                      <TextField
-                        size="small"
-                        fullWidth
-                        label="Tax2"
-                        margin="normal"
-                        name="tax2"
-                        value={formData.tax2}
-                        onChange={handleInputChange}
-                        error={!!fieldErrors.tax2}
-                        helperText={fieldErrors.tax2}
-                      />
-                      {errors.tax2 && <span style={{ color: 'red' }}>{errors.tax2}</span>}
-                    </div>
-                  </div>
-                </div>
-                <div className="col-md-6">
-                  <div className="row">
-                    <div className="col-md-6">
-                      <p className="mt-4 ">Address</p>
-                    </div>
-                    <div className="col-md-6">
-                      <TextareaAutosize
-                        id="textarea"
-                        className="form-control mb-1"
-                        value={formData.address}
-                        name="address"
-                        onChange={handleInputChange}
-                        rows="5"
-                        placeholder="Address"
-                        style={{ height: '18px' }}
-                        error={!!fieldErrors.address}
-                        helperText={fieldErrors.address}
-                      />
-                      {errors.address && <span style={{ color: 'green' }}>{errors.address}</span>}
-                    </div>
-                  </div>
-                  <div className="row">
-                    <div className="col-md-6">
-                      <p className="mt-4 ">Invoice Date</p>
-                    </div>
-                    <div className="col-md-6">
-                      <FormControl fullWidth variant="filled" size="small" className="mt-3">
-                        <LocalizationProvider dateAdapter={AdapterDayjs}>
-                          <DatePicker
-                            label="InVoice Date"
-                            value={formData.invoiceDate ? dayjs(formData.invoiceDate, 'DD-MM-YYYY') : null}
-                            onChange={(date) => handleDateChange('invoiceDate', date)}
-                            slotProps={{
-                              textField: { size: 'small', clearable: true }
-                            }}
-                            format="DD-MM-YYYY"
-                            error={!!fieldErrors.invoiceDate}
-                            helperText={fieldErrors.invoiceDate}
-                          />
-                          {errors.invoiceDate && <span style={{ color: 'red' }}>{errors.invoiceDate}</span>}
-                        </LocalizationProvider>
-                      </FormControl>
-                    </div>
-                  </div>
-                  <div className="row">
-                    <div className="col-md-6">
-                      <p className="mt-4 ">Due Date</p>
-                    </div>
-                    <div className="col-md-6 ">
-                      <FormControl fullWidth variant="filled" size="small">
-                        <LocalizationProvider dateAdapter={AdapterDayjs}>
-                          <DatePicker
-                            className="mt-3"
-                            label="Due Date"
-                            value={formData.dueDate ? dayjs(formData.dueDate, 'DD-MM-YYYY') : null}
-                            onChange={(date) => handleDateChange('dueDate', date)}
-                            slotProps={{
-                              textField: { size: 'small', clearable: true }
-                            }}
-                            format="DD-MM-YYYY"
-                            error={!!fieldErrors.dueDate}
-                            helperText={fieldErrors.dueDate}
-                          />
-                          {errors.dueDate && <span style={{ color: 'red' }}>{errors.dueDate}</span>}
-                        </LocalizationProvider>
-                      </FormControl>
-                    </div>
-                  </div>
-                  <div className="row">
-                    <div className="col-md-6">
-                      <p className="mt-4 ">Bill To</p>
-                    </div>
-                    <div className="col-md-6">
-                      <TextField
-                        size="small"
-                        fullWidth
-                        label="Bill To"
-                        margin="normal"
-                        name="billTo"
-                        value={formData.billTo}
-                        onChange={handleInputChange}
-                        error={!!fieldErrors.billTo}
-                        helperText={fieldErrors.billTo}
-                      />
-                      {errors.billTo && <span style={{ color: 'red' }}>{errors.billTo}</span>}
-                    </div>
-                  </div>
-                  <div className="row">
-                    <div className="col-md-6">
-                      <p className="mt-4 ">Tax 1</p>
-                    </div>
-                    <div className="col-md-6">
-                      <TextField
-                        size="small"
-                        fullWidth
-                        label="Tax1"
-                        margin="normal"
-                        name="tax1"
-                        value={formData.tax1}
-                        onChange={handleInputChange}
-                        error={!!fieldErrors.tax1}
-                        helperText={fieldErrors.tax1}
-                      />
-                      {errors.tax1 && <span style={{ color: 'red' }}>{errors.tax1}</span>}
-                    </div>
-                  </div>
-                </div>
+            <div className="row">
+              <div className="col-md-3 mb-3">
+                <TextField
+                  label="Invoice No"
+                  variant="outlined"
+                  size="small"
+                  fullWidth
+                  name="invoiceNo"
+                  value={formData.invoiceNo}
+                  onChange={handleInputChange}
+                  error={!!fieldErrors.invoiceNo}
+                  helperText={fieldErrors.invoiceNo}
+                />
+              </div>
+              <div className="col-md-3 mb-3">
+                <TextField
+                  label="Bill To Address"
+                  variant="outlined"
+                  size="small"
+                  fullWidth
+                  name="billToAddress"
+                  value={formData.billToAddress}
+                  onChange={handleInputChange}
+                  error={!!fieldErrors.billToAddress}
+                  helperText={fieldErrors.billToAddress}
+                />
+              </div>
+
+              <div className="col-md-3 mb-3">
+                <TextField
+                  label="CGST"
+                  variant="outlined"
+                  size="small"
+                  fullWidth
+                  name="cgst"
+                  value={formData.cgst}
+                  onChange={handleInputChange}
+                  error={!!fieldErrors.cgst}
+                  helperText={fieldErrors.cgst}
+                />
+              </div>
+
+              <div className="col-md-3 mb-3">
+                <TextField
+                  label="Company Address"
+                  variant="outlined"
+                  size="small"
+                  fullWidth
+                  name="companyAddress"
+                  value={formData.companyAddress}
+                  onChange={handleInputChange}
+                  error={!!fieldErrors.companyAddress}
+                  helperText={fieldErrors.companyAddress}
+                />
+              </div>
+
+              <div className="col-md-3 mb-3">
+                <TextField
+                  label="Due Date"
+                  variant="outlined"
+                  size="small"
+                  fullWidth
+                  name="dueDate"
+                  value={formData.dueDate}
+                  onChange={handleInputChange}
+                  error={!!fieldErrors.dueDate}
+                  helperText={fieldErrors.dueDate}
+                />
+              </div>
+
+              <div className="col-md-3 mb-3">
+                <TextField
+                  label="GST Type"
+                  variant="outlined"
+                  size="small"
+                  fullWidth
+                  name="gstType"
+                  value={formData.gstType}
+                  onChange={handleInputChange}
+                  error={!!fieldErrors.gstType}
+                  helperText={fieldErrors.gstType}
+                />
+              </div>
+
+              <div className="col-md-3 mb-3">
+                <TextField
+                  label="IGST"
+                  variant="outlined"
+                  size="small"
+                  fullWidth
+                  name="igst"
+                  value={formData.igst}
+                  onChange={handleInputChange}
+                  error={!!fieldErrors.igst}
+                  helperText={fieldErrors.igst}
+                />
+              </div>
+
+              <div className="col-md-3 mb-3">
+                <TextField
+                  label="Invoice Date"
+                  variant="outlined"
+                  size="small"
+                  fullWidth
+                  name="invoiceDate"
+                  value={formData.invoiceDate}
+                  onChange={handleInputChange}
+                  error={!!fieldErrors.invoiceDate}
+                  helperText={fieldErrors.invoiceDate}
+                />
+              </div>
+
+              <div className="col-md-3 mb-3">
+                <TextField
+                  label="Notes"
+                  variant="outlined"
+                  size="small"
+                  fullWidth
+                  name="notes"
+                  value={formData.notes}
+                  onChange={handleInputChange}
+                  error={!!fieldErrors.notes}
+                  helperText={fieldErrors.notes}
+                />
+              </div>
+
+              <div className="col-md-3 mb-3">
+                <TextField
+                  label="Service Month"
+                  variant="outlined"
+                  size="small"
+                  fullWidth
+                  name="serviceMonth"
+                  value={formData.serviceMonth}
+                  onChange={handleInputChange}
+                  error={!!fieldErrors.serviceMonth}
+                  helperText={fieldErrors.serviceMonth}
+                />
+              </div>
+
+              <div className="col-md-3 mb-3">
+                <TextField
+                  label="SGST"
+                  variant="outlined"
+                  size="small"
+                  fullWidth
+                  name="sgst"
+                  value={formData.sgst}
+                  onChange={handleInputChange}
+                  error={!!fieldErrors.sgst}
+                  helperText={fieldErrors.sgst}
+                />
+              </div>
+
+              <div className="col-md-3 mb-3">
+                <TextField
+                  label="Ship To Address"
+                  variant="outlined"
+                  size="small"
+                  fullWidth
+                  name="shipToAddress"
+                  value={formData.shipToAddress}
+                  onChange={handleInputChange}
+                  error={!!fieldErrors.shipToAddress}
+                  helperText={fieldErrors.shipToAddress}
+                />
+              </div>
+
+              <div className="col-md-3 mb-3">
+                <TextField
+                  label="Subtotal"
+                  variant="outlined"
+                  size="small"
+                  fullWidth
+                  name="subTotal"
+                  value={formData.subTotal}
+                  onChange={handleInputChange}
+                  error={!!fieldErrors.subTotal}
+                  helperText={fieldErrors.subTotal}
+                />
+              </div>
+
+              <div className="col-md-3 mb-3">
+                <TextField
+                  label="Terms and Conditions"
+                  variant="outlined"
+                  size="small"
+                  fullWidth
+                  name="termsAndConditions"
+                  value={formData.termsAndConditions}
+                  onChange={handleInputChange}
+                  error={!!fieldErrors.termsAndConditions}
+                  helperText={fieldErrors.termsAndConditions}
+                />
+              </div>
+
+              <div className="col-md-3 mb-3">
+                <TextField
+                  label="Total"
+                  variant="outlined"
+                  size="small"
+                  fullWidth
+                  name="total"
+                  value={formData.total}
+                  onChange={handleInputChange}
+                  error={!!fieldErrors.total}
+                  helperText={fieldErrors.total}
+                />
               </div>
             </div>
+
             <>
               <Box sx={{ width: '100%' }}>
                 <Tabs value={value} onChange={handleTapChange} aria-label="Invoice Tabs">
@@ -587,71 +681,154 @@ const Invoice = () => {
                       <>
                         <div className="row ">
                           <div className="mb-2 d-flex">
-                            <ActionButton title="Add" icon={AddIcon} onClick={addNewRow} />
+                            <ActionButton title="Add" icon={AddIcon} onClick={handleAddRow} />
                             <ActionButton title="Clear" icon={ClearIcon} onClick={handleClear} />
                           </div>
                         </div>
-                        <div className="row">
-                          <div className="">
+                        <div className="row mt-2">
+                          <div className="col-lg-12">
                             <div className="table-responsive">
-                              <table className="table table-bordered">
+                              <table className="table table-bordered" style={{ width: '100%' }}>
                                 <thead>
-                                  <tr style={{ backgroundColor: 'rgb(103 58 183)' }}>
-                                    <th className="px-2 py-2 text-white text-center">S.No</th>
+                                  <tr style={{ backgroundColor: '#673AB7' }}>
+                                    {!viewId && (
+                                      <>
+                                        <th className="px-2 py-2 text-white text-center" style={{ width: '68px' }}>
+                                          Action
+                                        </th>
+                                      </>
+                                    )}
+                                    <th className="px-2 py-2 text-white text-center" style={{ width: '50px' }}>
+                                      {' '}
+                                      S.No
+                                    </th>
                                     <th className="px-2 py-2 text-white text-center">Item & Description</th>
-                                    <th className="px-2 py-2 text-white text-center">Qty</th>
+                                    <th className="px-2 py-2 text-white text-center">Quantity</th>
                                     <th className="px-2 py-2 text-white text-center">Rate</th>
                                     <th className="px-2 py-2 text-white text-center">Amount</th>
-                                    <th className="px-2 py-2 text-white text-center">Action</th>
                                   </tr>
                                 </thead>
-                                <tbody>
-                                  {rows.map((row, index) => (
-                                    <tr key={row.id}>
-                                      <td>{row.id}</td>
-                                      <td>
-                                        <input
-                                          type="text"
-                                          name="name"
-                                          value={row.name}
-                                          onChange={(event) => handleInputChange(event, index)}
-                                          className="form-control"
-                                          error={!!fieldErrors.name}
-                                          helperText={fieldErrors.name}
-                                        />
-                                        {errors.name && <span style={{ color: 'red' }}>{errors.name}</span>}
-                                      </td>
-                                      <td>
-                                        <input
-                                          type="number"
-                                          name="qty"
-                                          value={row.qty}
-                                          onChange={(event) => handleInputChange(event, index)}
-                                          className="form-control"
-                                          error={!!fieldErrors.qty}
-                                          helperText={fieldErrors.qty}
-                                        />
-                                        {errors.qty && <span style={{ color: 'red' }}>{errors.qty}</span>}
-                                      </td>
-                                      <td>
-                                        <input
-                                          type="number"
-                                          name="rate"
-                                          value={row.rate}
-                                          onChange={(event) => handleInputChange(event, index)}
-                                          className="form-control"
-                                          error={!!fieldErrors.rate}
-                                          helperText={fieldErrors.rate}
-                                        />
-                                        {errors.rate && <span style={{ color: 'red' }}>{errors.rate}</span>}
-                                      </td>
-                                      <td>{row.amount}</td>
-                                      <td>
-                                        <ActionButton title="Delete" icon={DeleteIcon} onClick={() => handleDeleteRow(row.id)} />
-                                      </td>
-                                    </tr>
-                                  ))}
-                                </tbody>
+                                {!viewId ? (
+                                  <>
+                                    <tbody>
+                                      {childTableData.length === 0 ? (
+                                        <tr>
+                                          <td colSpan="18" className="text-center py-2">
+                                            No Data Found
+                                          </td>
+                                        </tr>
+                                      ) : (
+                                        childTableData.map((row, index) => (
+                                          <tr key={row.id}>
+                                            {!viewId && (
+                                              <>
+                                                <td className="border px-2 py-2 text-center">
+                                                  <ActionButton
+                                                    title="Delete"
+                                                    icon={DeleteIcon}
+                                                    onClick={() =>
+                                                      handleDeleteRow(
+                                                        row.id,
+                                                        childTableData,
+                                                        setChildTableData,
+                                                        childTableErrors,
+                                                        setChildTableErrors
+                                                      )
+                                                    }
+                                                  />
+                                                </td>
+                                              </>
+                                            )}
+                                            <td className="text-center">
+                                              <div className="pt-2">{index + 1}</div>
+                                            </td>
+
+                                            <td className="border px-2 py-2">
+                                              <input
+                                                type="text"
+                                                value={row.description}
+                                                onChange={(e) => {
+                                                  const updatedTableData = [...childTableData];
+                                                  updatedTableData[index].description = e.target.value;
+                                                  setChildTableData(updatedTableData);
+                                                }}
+                                                style={{ width: '180px' }}
+                                                className={childTableErrors[index]?.description ? 'error form-control' : 'form-control'}
+                                              />
+                                              {childTableErrors[index]?.description && (
+                                                <div style={{ color: 'red', fontSize: '12px' }}>{childTableErrors[index].description}</div>
+                                              )}
+                                            </td>
+
+                                            <td className="border px-2 py-2">
+                                              <input
+                                                type="text"
+                                                value={row.quantity}
+                                                onChange={(e) => {
+                                                  const updatedTableData = [...childTableData];
+                                                  updatedTableData[index].quantity = e.target.value;
+                                                  setChildTableData(updatedTableData);
+                                                }}
+                                                style={{ width: '180px' }}
+                                                className={childTableErrors[index]?.quantity ? 'error form-control' : 'form-control'}
+                                              />
+                                              {childTableErrors[index]?.quantity && (
+                                                <div style={{ color: 'red', fontSize: '12px' }}>{childTableErrors[index].quantity}</div>
+                                              )}
+                                            </td>
+
+                                            <td className="border px-2 py-2">
+                                              <input
+                                                type="text"
+                                                value={row.rate}
+                                                onChange={(e) => {
+                                                  const updatedTableData = [...childTableData];
+                                                  updatedTableData[index].rate = e.target.value;
+                                                  setChildTableData(updatedTableData);
+                                                }}
+                                                style={{ width: '180px' }}
+                                                className={childTableErrors[index]?.rate ? 'error form-control' : 'form-control'}
+                                              />
+                                              {childTableErrors[index]?.rate && (
+                                                <div style={{ color: 'red', fontSize: '12px' }}>{childTableErrors[index].rate}</div>
+                                              )}
+                                            </td>
+
+                                            <td className="border px-2 py-2">
+                                              <input
+                                                type="number"
+                                                value={row.amount}
+                                                onChange={(e) => {
+                                                  const updatedTableData = [...childTableData];
+                                                  updatedTableData[index].amount = e.target.value;
+                                                  setChildTableData(updatedTableData);
+                                                }}
+                                                style={{ width: '180px' }}
+                                                className={childTableErrors[index]?.amount ? 'error form-control' : 'form-control'}
+                                              />
+                                              {childTableErrors[index]?.amount && (
+                                                <div style={{ color: 'red', fontSize: '12px' }}>{childTableErrors[index].amount}</div>
+                                              )}
+                                            </td>
+                                          </tr>
+                                        ))
+                                      )}
+                                    </tbody>
+                                    {childTableErrors.some((error) => error.general) && (
+                                      <tfoot>
+                                        <tr>
+                                          <td colSpan={13} className="error-message">
+                                            <div style={{ color: 'red', fontSize: '14px', textAlign: 'center' }}>
+                                              {childTableErrors.find((error) => error.general)?.general}
+                                            </div>
+                                          </td>
+                                        </tr>
+                                      </tfoot>
+                                    )}
+                                  </>
+                                ) : (
+                                  <></>
+                                )}
                               </table>
                             </div>
                           </div>
@@ -663,85 +840,61 @@ const Invoice = () => {
                     <div variant="body1">
                       <>
                         <div className="row">
-                          <div className="col-md-6">
-                            <div className="row">
-                              <div className="col-md-6">
-                                <p className="mt-4 ">Bank Name</p>
-                              </div>
-                              <div className="col-md-6">
-                                <TextField
-                                  size="small"
-                                  fullWidth
-                                  label="Bank Name"
-                                  margin="normal"
-                                  name="bankName"
-                                  value={formData.bankName}
-                                  onChange={handleInputChange}
-                                  error={!!fieldErrors.bankName}
-                                  helperText={fieldErrors.bankName}
-                                />
-                                {errors.bankName && <span style={{ color: 'red' }}>{errors.bankName}</span>}
-                              </div>
-                            </div>
-                            <div className="row">
-                              <div className="col-md-6">
-                                <p className="mt-4 ">Account No</p>
-                              </div>
-                              <div className="col-md-6">
-                                <TextField
-                                  size="small"
-                                  fullWidth
-                                  label="Account No:"
-                                  margin="normal"
-                                  name="accountNo"
-                                  value={formData.accountNo}
-                                  onChange={handleInputChange}
-                                  error={!!fieldErrors.accountNo}
-                                  helperText={fieldErrors.accountNo}
-                                />
-                                {errors.accountNo && <span style={{ color: 'red' }}>{errors.accountNo}</span>}
-                              </div>
-                            </div>
+                          <div className="col-md-3">
+                            <TextField
+                              size="small"
+                              fullWidth
+                              label="Bank Name"
+                              margin="normal"
+                              name="bankName"
+                              value={formData.bankName}
+                              onChange={handleInputChange}
+                              error={!!fieldErrors.bankName}
+                              helperText={fieldErrors.bankName}
+                            />
+                            {/* {errors.bankName && <span style={{ color: 'red' }}>{errors.bankName}</span>} */}
                           </div>
-                          <div className="col-md-6">
-                            <div className="row">
-                              <div className="col-md-6">
-                                <p className="mt-4 ">Account Name</p>
-                              </div>
-                              <div className="col-md-6">
-                                <TextField
-                                  size="small"
-                                  fullWidth
-                                  label="Account Name"
-                                  margin="normal"
-                                  name="accountName"
-                                  value={formData.accountName}
-                                  onChange={handleInputChange}
-                                  error={!!fieldErrors.accountName}
-                                  helperText={fieldErrors.accountName}
-                                />
-                                {errors.accountName && <span style={{ color: 'red' }}>{errors.accountName}</span>}
-                              </div>
-                            </div>
-                            <div className="row">
-                              <div className="col-md-6">
-                                <p className="mt-4 ">IFSC</p>
-                              </div>
-                              <div className="col-md-6">
-                                <TextField
-                                  size="small"
-                                  fullWidth
-                                  label="iFSC"
-                                  margin="normal"
-                                  name="iFSC"
-                                  value={formData.iFSC}
-                                  onChange={handleInputChange}
-                                  error={!!fieldErrors.iFSC}
-                                  helperText={fieldErrors.iFSC}
-                                />
-                                {errors.iFSC && <span style={{ color: 'red' }}>{errors.iFSC}</span>}
-                              </div>
-                            </div>
+                          <div className="col-md-3">
+                            <TextField
+                              size="small"
+                              fullWidth
+                              label="Account No:"
+                              margin="normal"
+                              name="accountNo"
+                              value={formData.accountNo}
+                              onChange={handleInputChange}
+                              error={!!fieldErrors.accountNo}
+                              helperText={fieldErrors.accountNo}
+                            />
+                            {/* {errors.accountNo && <span style={{ color: 'red' }}>{errors.accountNo}</span>} */}
+                          </div>
+                          <div className="col-md-3">
+                            <TextField
+                              size="small"
+                              fullWidth
+                              label="Account Name"
+                              margin="normal"
+                              name="accountName"
+                              value={formData.accountName}
+                              onChange={handleInputChange}
+                              error={!!fieldErrors.accountName}
+                              helperText={fieldErrors.accountName}
+                            />
+                            {/* {errors.accountName && <span style={{ color: 'red' }}>{errors.accountName}</span>} */}
+                          </div>
+                          <div className="col-md-3">
+                            <TextField
+                              size="small"
+                              fullWidth
+                              label="IFSC"
+                              margin="normal"
+                              name="iFSC"
+                              value={formData.iFSC}
+                              onChange={handleInputChange}
+                              error={!!fieldErrors.iFSC}
+                              helperText={fieldErrors.iFSC}
+                            />
+                            {/* {errors.iFSC && <span style={{ color: 'red' }}>{errors.iFSC}</span>} */}
                           </div>
                         </div>
                       </>
