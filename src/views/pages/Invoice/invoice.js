@@ -75,9 +75,12 @@ const Invoice = () => {
     companyAddress: '',
     dueDate: '',
     gstType: '',
+    tax: '',
+    taxpercentage: '',
     igst: '',
     invoiceDate: '',
     invoiceNo: '',
+    term: '',
     notes: '',
     serviceMonth: '',
     sgst: '',
@@ -111,9 +114,12 @@ const Invoice = () => {
     companyAddress: '',
     dueDate: '',
     gstType: '',
+    tax: '',
+    taxpercentage: '',
     igst: '',
     invoiceDate: '',
     invoiceNo: '',
+    term: '',
     notes: '',
     serviceMonth: '',
     sgst: '',
@@ -209,6 +215,8 @@ const Invoice = () => {
     if (!formData.termsAndConditions) errors.termsAndConditions = 'termsAndConditions is required';
     if (!formData.sgst) errors.sgst = 'sgst is required';
     if (!formData.gstType) errors.gstType = 'gstType is required';
+    if (!formData.tax) errors.tax = 'Tax is required';
+    if (!formData.taxpercentage) errors.taxpercentage = 'Taxpercentage is required';
     if (!formData.notes) errors.notes = 'notes is required';
     if (!formData.igst) errors.igst = 'igst is required';
     if (!formData.subTotal) errors.subTotal = 'subTotal is required';
@@ -218,6 +226,7 @@ const Invoice = () => {
     if (!formData.accountNo) errors.accountNo = 'Account No is required';
     if (!formData.iFSC) errors.iFSC = 'IFSC Code is required';
     if (!formData.invoiceNo) errors.invoiceNo = 'Invoice Num is required';
+    if (!formData.term) errors.term = 'Term is required';
     if (!formData.companyAddress) errors.companyAddress = 'Address is required';
     if (!formData.invoiceDate) errors.invoiceDate = 'Invoice Date is required';
     if (!formData.dueDate) errors.dueDate = 'Due Date is required';
@@ -274,10 +283,11 @@ const Invoice = () => {
         companyAddress: formData.companyAddress,
         dueDate: formData.dueDate,
         gstType: formData.gstType,
+        taxpercentage: formData.taxpercentage,
         ifsc: formData.iFSC,
         igst: formData.igst,
         invoiceDate: formData.invoiceDate,
-        invoiceNo: formData.invoiceNo,
+        term: formData.term,
         notes: formData.notes,
         serviceMonth: formData.serviceMonth,
         sgst: formData.sgst,
@@ -328,17 +338,93 @@ const Invoice = () => {
     setRows([...rows, newRow]);
   };
 
+  // const handleInputChange = (event, index = null) => {
+  //   const { name, value } = event.target;
+  //   const addressRegex = /^[a-zA-Z0-9\s,.-]*$/;
+  //   const codeRegex = /^[a-zA-Z0-9#_\-\/\\]*$/;
+  //   const numberRegex = /^\d*\.?\d*$/;
+  //   const taxPercentageRegex = /^(100(\.0{1,2})?|[1-9]?\d(\.\d{1,2})?)$/;
+  //   const ifscRegex = /^[A-Z]{4}0[A-Z0-9]{6}$/;
+
+  //   if ((name === 'invoiceNo' || name === 'term') && !codeRegex.test(value)) {
+  //     setFieldErrors((prevErrors) => ({ ...prevErrors, [name]: 'Invalid Format' }));
+  //   }
+  //   if ((name === 'billToAddress' || name === 'shipToAddress' || name === 'companyAddress') && !addressRegex.test(value)) {
+  //     setFieldErrors((prevErrors) => ({ ...prevErrors, [name]: 'Invalid Format' }));
+  //   }
+  //   if ((name === 'cgst' || name === 'sgst' || name === 'igst' || name === 'total' || name === 'subTotal' || name === 'accountNo') && !numberRegex.test(value)) {
+  //     setFieldErrors((prevErrors) => ({ ...prevErrors, [name]: 'Invalid Format' }));
+  //   }
+  //   if (name === 'taxpercentage' && !taxPercentageRegex.test(value)) {
+  //     setFieldErrors((prevErrors) => ({ ...prevErrors, [name]: 'Invalid Format' }));
+  //   }
+  //   if (name === 'iFSC' && !ifscRegex.test(value)) {
+  //     setFieldErrors((prevErrors) => ({ ...prevErrors, [name]: 'Invalid Format' }));
+  //   } else {
+  //     setFormData((prevData) => ({ ...prevData, [name]: value.toUpperCase() }));
+  //     setFieldErrors((prevErrors) => ({ ...prevErrors, [name]: '' }));
+  //   }
+
+  //   if (index !== null) {
+  //     const updatedRows = rows.map((row, i) => {
+  //       if (i === index) {
+  //         const updatedRow = { ...row, [name]: value };
+  //         if (name === 'qty' || name === 'rate') {
+  //           const qty = updatedRow.qty || 0;
+  //           const rate = updatedRow.rate || 0;
+  //           updatedRow.amount = qty * rate;
+  //         }
+  //         return updatedRow;
+  //       }
+  //       return row;
+  //     });
+  //     setRows(updatedRows);
+  //   } else {
+  //     setFormData((prevData) => ({
+  //       ...prevData,
+  //       [name]: value
+  //     }));
+  //   }
+  // };
+
   const handleInputChange = (event, index = null) => {
     const { name, value } = event.target;
-    const codeRegex = /^[a-zA-Z0-9#_\-\/\\]*$/;
     const addressRegex = /^[a-zA-Z0-9\s,.-]*$/;
-    if (name === 'invoiceNo' && !codeRegex.test(value)) {
-      setFieldErrors((prevErrors) => ({ ...prevErrors, [name]: 'Invalid Format' }));
-    } else {
-      setFormData((prevData) => ({ ...prevData, [name]: value.toUpperCase() }));
-      setFieldErrors((prevErrors) => ({ ...prevErrors, [name]: '' }));
+    const codeRegex = /^[a-zA-Z0-9#_\-\/\\]*$/;
+    const numberRegex = /^\d*\.?\d*$/;
+    const taxPercentageRegex = /^(100(\.0{1,2})?|[1-9]?\d(\.\d{1,2})?)$/;
+    const ifscRegex = /^[A-Z]{4}0[A-Z0-9]{6}$/;
+  
+    let errors = {}; // Temporarily store errors
+  
+    // Validation checks
+    if ((name === 'invoiceNo' || name === 'term') && !codeRegex.test(value)) {
+      errors[name] = 'Invalid Format';
     }
-
+    if ((name === 'billToAddress' || name === 'shipToAddress' || name === 'companyAddress') && !addressRegex.test(value)) {
+      errors[name] = 'Invalid Format';
+    }
+    if ((name === 'cgst' || name === 'sgst' || name === 'igst' || name === 'total' || name === 'subTotal' || name === 'accountNo') && !numberRegex.test(value)) {
+      errors[name] = 'Invalid Format';
+    }
+    if (name === 'taxpercentage' && !taxPercentageRegex.test(value)) {
+      errors[name] = 'Invalid Format';
+    }
+    if (name === 'iFSC' && !ifscRegex.test(value)) {
+      errors[name] = 'Invalid Format';
+    }
+  
+    // Update the field errors
+    setFieldErrors((prevErrors) => ({ ...prevErrors, ...errors }));
+  
+    // Proceed with updating form data if no errors
+    if (Object.keys(errors).length === 0) {
+      setFormData((prevData) => ({
+        ...prevData,
+        [name]: name === 'iFSC' ? value.toUpperCase() : value, // Uppercase only for iFSC
+      }));
+    }
+  
     if (index !== null) {
       const updatedRows = rows.map((row, i) => {
         if (i === index) {
@@ -353,13 +439,9 @@ const Invoice = () => {
         return row;
       });
       setRows(updatedRows);
-    } else {
-      setFormData((prevData) => ({
-        ...prevData,
-        [name]: value
-      }));
     }
   };
+  
 
   const handleDeleteRow = (id) => {
     const updatedRows = rows.filter((row) => row.id !== id);
@@ -372,9 +454,12 @@ const Invoice = () => {
       companyAddress: '',
       dueDate: '',
       gstType: '',
+      tax: '',
+      taxpercentage: '',
       igst: '',
       invoiceDate: '',
       invoiceNo: '',
+      term: '',
       notes: '',
       serviceMonth: '',
       sgst: '',
@@ -394,9 +479,12 @@ const Invoice = () => {
       companyAddress: '',
       dueDate: '',
       gstType: '',
+      tax: '',
+      taxpercentage: '',
       igst: '',
       invoiceDate: '',
       invoiceNo: '',
+      term: '',
       notes: '',
       serviceMonth: '',
       sgst: '',
@@ -471,7 +559,50 @@ const Invoice = () => {
                   helperText={fieldErrors.invoiceNo}
                 />
               </div>
+
               <div className="col-md-3 mb-3">
+                <TextField
+                  label="Invoice Date"
+                  variant="outlined"
+                  size="small"
+                  fullWidth
+                  name="invoiceDate"
+                  value={formData.invoiceDate}
+                  onChange={handleInputChange}
+                  error={!!fieldErrors.invoiceDate}
+                  helperText={fieldErrors.invoiceDate}
+                />
+              </div>
+
+              <div className="col-md-3 mb-3">
+                <TextField
+                  label="Term"
+                  variant="outlined"
+                  size="small"
+                  fullWidth
+                  name="term"
+                  value={formData.term}
+                  onChange={handleInputChange}
+                  error={!!fieldErrors.term}
+                  helperText={fieldErrors.term}
+                />
+              </div>
+
+              <div className="col-md-3 mb-3">
+                <TextField
+                  label="Due Date"
+                  variant="outlined"
+                  size="small"
+                  fullWidth
+                  name="dueDate"
+                  value={formData.dueDate}
+                  onChange={handleInputChange}
+                  error={!!fieldErrors.dueDate}
+                  helperText={fieldErrors.dueDate}
+                />
+              </div>
+
+              <div className="col-md-6 mb-3">
                 <TextField
                   label="Bill To Address"
                   variant="outlined"
@@ -485,17 +616,31 @@ const Invoice = () => {
                 />
               </div>
 
-              <div className="col-md-3 mb-3">
+              <div className="col-md-6 mb-3">
                 <TextField
-                  label="CGST"
+                  label="Ship To Address"
                   variant="outlined"
                   size="small"
                   fullWidth
-                  name="cgst"
-                  value={formData.cgst}
+                  name="shipToAddress"
+                  value={formData.shipToAddress}
                   onChange={handleInputChange}
-                  error={!!fieldErrors.cgst}
-                  helperText={fieldErrors.cgst}
+                  error={!!fieldErrors.shipToAddress}
+                  helperText={fieldErrors.shipToAddress}
+                />
+              </div>
+
+              <div className="col-md-3 mb-3">
+                <TextField
+                  label="Service Month"
+                  variant="outlined"
+                  size="small"
+                  fullWidth
+                  name="serviceMonth"
+                  value={formData.serviceMonth}
+                  onChange={handleInputChange}
+                  error={!!fieldErrors.serviceMonth}
+                  helperText={fieldErrors.serviceMonth}
                 />
               </div>
 
@@ -515,15 +660,29 @@ const Invoice = () => {
 
               <div className="col-md-3 mb-3">
                 <TextField
-                  label="Due Date"
+                  label="Tax"
                   variant="outlined"
                   size="small"
                   fullWidth
-                  name="dueDate"
-                  value={formData.dueDate}
+                  name="tax"
+                  value={formData.tax}
                   onChange={handleInputChange}
-                  error={!!fieldErrors.dueDate}
-                  helperText={fieldErrors.dueDate}
+                  error={!!fieldErrors.tax}
+                  helperText={fieldErrors.tax}
+                />
+              </div>
+
+              <div className="col-md-3 mb-3">
+                <TextField
+                  label="Tax Percentage %"
+                  variant="outlined"
+                  size="small"
+                  fullWidth
+                  name="taxpercentage"
+                  value={formData.taxpercentage}
+                  onChange={handleInputChange}
+                  error={!!fieldErrors.taxpercentage}
+                  helperText={fieldErrors.taxpercentage}
                 />
               </div>
 
@@ -557,48 +716,6 @@ const Invoice = () => {
 
               <div className="col-md-3 mb-3">
                 <TextField
-                  label="Invoice Date"
-                  variant="outlined"
-                  size="small"
-                  fullWidth
-                  name="invoiceDate"
-                  value={formData.invoiceDate}
-                  onChange={handleInputChange}
-                  error={!!fieldErrors.invoiceDate}
-                  helperText={fieldErrors.invoiceDate}
-                />
-              </div>
-
-              <div className="col-md-3 mb-3">
-                <TextField
-                  label="Notes"
-                  variant="outlined"
-                  size="small"
-                  fullWidth
-                  name="notes"
-                  value={formData.notes}
-                  onChange={handleInputChange}
-                  error={!!fieldErrors.notes}
-                  helperText={fieldErrors.notes}
-                />
-              </div>
-
-              <div className="col-md-3 mb-3">
-                <TextField
-                  label="Service Month"
-                  variant="outlined"
-                  size="small"
-                  fullWidth
-                  name="serviceMonth"
-                  value={formData.serviceMonth}
-                  onChange={handleInputChange}
-                  error={!!fieldErrors.serviceMonth}
-                  helperText={fieldErrors.serviceMonth}
-                />
-              </div>
-
-              <div className="col-md-3 mb-3">
-                <TextField
                   label="SGST"
                   variant="outlined"
                   size="small"
@@ -613,15 +730,15 @@ const Invoice = () => {
 
               <div className="col-md-3 mb-3">
                 <TextField
-                  label="Ship To Address"
+                  label="CGST"
                   variant="outlined"
                   size="small"
                   fullWidth
-                  name="shipToAddress"
-                  value={formData.shipToAddress}
+                  name="cgst"
+                  value={formData.cgst}
                   onChange={handleInputChange}
-                  error={!!fieldErrors.shipToAddress}
-                  helperText={fieldErrors.shipToAddress}
+                  error={!!fieldErrors.cgst}
+                  helperText={fieldErrors.cgst}
                 />
               </div>
 
@@ -641,20 +758,6 @@ const Invoice = () => {
 
               <div className="col-md-3 mb-3">
                 <TextField
-                  label="Terms and Conditions"
-                  variant="outlined"
-                  size="small"
-                  fullWidth
-                  name="termsAndConditions"
-                  value={formData.termsAndConditions}
-                  onChange={handleInputChange}
-                  error={!!fieldErrors.termsAndConditions}
-                  helperText={fieldErrors.termsAndConditions}
-                />
-              </div>
-
-              <div className="col-md-3 mb-3">
-                <TextField
                   label="Total"
                   variant="outlined"
                   size="small"
@@ -664,6 +767,34 @@ const Invoice = () => {
                   onChange={handleInputChange}
                   error={!!fieldErrors.total}
                   helperText={fieldErrors.total}
+                />
+              </div>
+
+              <div className="col-md-6 mb-3">
+                <TextField
+                  label="Terms and Conditions"
+                  variant="outlined"
+                  size="medium"
+                  fullWidth
+                  name="termsAndConditions"
+                  value={formData.termsAndConditions}
+                  onChange={handleInputChange}
+                  error={!!fieldErrors.termsAndConditions}
+                  helperText={fieldErrors.termsAndConditions}
+                />
+              </div>
+
+              <div className="col-md-6 mb-3">
+                <TextField
+                  label="Notes"
+                  variant="outlined"
+                  size="medium"
+                  fullWidth
+                  name="notes"
+                  value={formData.notes}
+                  onChange={handleInputChange}
+                  error={!!fieldErrors.notes}
+                  helperText={fieldErrors.notes}
                 />
               </div>
             </div>
