@@ -1,6 +1,8 @@
 import axios from 'axios';
 
 import React, { useState, useEffect } from 'react';
+import Button from '@mui/material/Button';
+import ImageIcon from '@mui/icons-material/Image';
 import ActionButton from 'utils/ActionButton';
 import ClearIcon from '@mui/icons-material/Clear';
 import SaveIcon from '@mui/icons-material/Save';
@@ -15,7 +17,6 @@ import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
 import apiCalls from 'apicall';
 import Typography from '@mui/material/Typography';
-
 import {
   TextField,
   Checkbox,
@@ -42,47 +43,47 @@ const Invoice = () => {
 
   const [file, setFile] = useState(null);
   const [downloadPdf, setDownloadPdf] = useState(false);
+  const [selectedImage, setSelectedImage] = useState(null);
   const [pdfData, setPdfData] = useState([]);
   const [inputValue, setInputValue] = useState('');
   const [error, setError] = useState('');
   const [editId, setEditId] = useState('');
   const [childTableErrors, setChildTableErrors] = useState([]);
   const [childTableData, setChildTableData] = useState([]);
-
   const [value, setValue] = useState(0);
 
-  const [listView, setListView] = useState(false);
-  const [editMode, setEditMode] = useState(false);
-  const listViewColumns = [
-    // { accessorKey: 'bankName', header: 'Bank Name', size: 140
-
-    { accessorKey: 'invoiceNo', header: 'Invoice Num', size: 140 },
-    { accessorKey: 'invoiceDate', header: 'Invoice Date', size: 140 },
-    { accessorKey: 'dueDate', header: 'Due Date', size: 140 }
+  const invoiceDate = dayjs().format('DD-MM-YYYY');
+  const [day, month, year] = invoiceDate.split('-');
+  const monthNames = [
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December'
   ];
-  const [listViewData, setListViewData] = useState([]);
+  const serviceMonth = `${day} ${monthNames[parseInt(month, 10) - 1]}`;
 
-  useEffect(() => {
-    getAllTaxInvoice();
-  }, []);
-
-  // const [errors, setErrors] = useState({});
-  const [isLoading, setIsLoading] = useState(false);
-  const [text, setText] = useState('');
   const [formData, setFormData] = useState({
     billToAddress: '',
     cgst: '',
     companyAddress: '',
-    dueDate: '',
+    dueDate: dayjs().add(30, 'day').format('DD-MM-YYYY'),
     gstType: '',
     tax: '',
     taxpercentage: '',
     igst: '',
-    invoiceDate: '',
+    invoiceDate: invoiceDate,
     invoiceNo: '',
     term: '',
     notes: '',
-    serviceMonth: '',
+    serviceMonth: serviceMonth,
     sgst: '',
     shipToAddress: '',
     subTotal: '',
@@ -92,9 +93,8 @@ const Invoice = () => {
     bankName: '',
     accountName: '',
     accountNo: '',
-    iFSC: ''
+    ifsc: ''
   });
-
   const [modalTableData, setModalTableData] = useState([
     {
       id: 1,
@@ -106,7 +106,7 @@ const Invoice = () => {
   ]);
 
   const [rows, setRows] = useState([]);
-  const [viewId, setViewId] = useState('');
+  const [viewId, setViewId] = useState(true);
 
   const [fieldErrors, setFieldErrors] = useState({
     billToAddress: '',
@@ -131,42 +131,40 @@ const Invoice = () => {
     bankName: '',
     accountName: '',
     accountNo: '',
-    iFSC: ''
+    ifsc: ''
   });
-  const [productLinesErrorsTable, setProductLinesErrorsTable] = useState({
-    description: '',
-    amount: '',
-    quantity: '',
-    rate: ''
-  });
+  const [listView, setListView] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+  const listViewColumns = [
+    { accessorKey: 'invoiceNo', header: 'Invoice Num', size: 140 },
+    { accessorKey: 'invoiceDate', header: 'Invoice Date', size: 140 },
+    { accessorKey: 'dueDate', header: 'Due Date', size: 140 }
+  ];
+  const [listViewData, setListViewData] = useState([]);
+
+  useEffect(() => {
+    getAllTaxInvoice();
+    getTaxInvoiceById();
+  }, []);
+
+  const [isLoading, setIsLoading] = useState(false);
+  const handleImageChange = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      setSelectedImage(URL.createObjectURL(file));
+    }
+  };
 
   const handleAddRow = () => {
-    console.log('THE HANDLE ADD ROW FUNCTION IS WORKING');
-
     if (isLastRowEmpty(childTableData)) {
       displayRowError(childTableData);
-      console.log('Last Row is Empty');
       return;
     }
-    console.log('the ok');
 
-    const newRow = {
-      id: Date.now(),
-      description: '',
-      amount: '',
-      quantity: '',
-      rate: ''
-    };
+    const newRow = { id: Date.now(), description: '', amount: '', quantity: '', rate: '' };
     setChildTableData([...childTableData, newRow]);
-    setChildTableErrors([
-      ...childTableErrors,
-      {
-        description: '',
-        amount: '',
-        quantity: '',
-        rate: ''
-      }
-    ]);
+    setChildTableErrors([...childTableErrors, { description: '', amount: '', quantity: '', rate: '' }]);
+    setViewId(false);
   };
 
   const isLastRowEmpty = (table) => {
@@ -174,25 +172,25 @@ const Invoice = () => {
     if (!lastRow) return false;
 
     if (table === childTableData) {
-      return !lastRow.partDesc || !lastRow.partNo || !lastRow.qrcodevalue || !lastRow.barcodevalue || !lastRow.batchno;
+      return !lastRow.rate || !lastRow.quantity || !lastRow.amount || !lastRow.description;
     }
     return false;
   };
 
   const displayRowError = (table) => {
-    if (table === childTableData) {
-      setChildTableErrors((prevErrors) => {
-        const newErrors = [...prevErrors];
-        newErrors[table.length - 1] = {
-          ...newErrors[table.length - 1],
-          description: !table[table.length - 1].description ? 'description is required' : '',
-          quantity: !table[table.length - 1].quantity ? 'quantity is required' : '',
-          rate: !table[table.length - 1].rate ? 'rate is required' : '',
-          amount: !table[table.length - 1].amount ? 'amount is required' : ''
-        };
-        return newErrors;
-      });
-    }
+    setChildTableErrors((prevErrors) => {
+      const newErrors = [...prevErrors];
+      const lastRow = table[table.length - 1];
+
+      newErrors[table.length - 1] = {
+        description: !lastRow.description ? 'Description is required' : '',
+        quantity: !lastRow.quantity ? 'Quantity is required' : '',
+        rate: !lastRow.rate ? 'Rate is required' : '',
+        amount: !lastRow.amount ? 'Amount is required' : ''
+      };
+
+      return newErrors;
+    });
   };
 
   const getAllTaxInvoice = async () => {
@@ -201,6 +199,65 @@ const Invoice = () => {
       console.log('API Response:', response);
       if (response.status === true) {
         setListViewData(response.paramObjectsMap.taxInvoiceVO);
+        // getTaxInvoiceById();
+      } else {
+        console.error('API Error:', response);
+      }
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    }
+  };
+
+  const getTaxInvoiceById = async (row) => {
+    console.log('THE SELECTED row ID IS:', row);
+    // setViewId(id);
+    try {
+      const response = await apiCalls('get', `master/getTaxInvoiceById?id=${row.original.id}`);
+      console.log('API Response:', response);
+
+      if (response.status === true) {
+        setListView(false);
+        const particularInvoiceNo = response.paramObjectsMap.taxInvoiceVO;
+        console.log('THE PARTICULAR Invoice Num DATA IS:', particularInvoiceNo);
+        setFormData({
+          accountName: particularInvoiceNo.accountName,
+          taxpercentage: particularInvoiceNo.tax,
+          accountNo: particularInvoiceNo.accountNo,
+          bankName: particularInvoiceNo.bankName,
+          ifsc: particularInvoiceNo.ifsc,
+          billToAddress: particularInvoiceNo.billToAddress,
+          cgst: particularInvoiceNo.cgst,
+          companyAddress: particularInvoiceNo.companyAddress,
+          dueDate: particularInvoiceNo.dueDate
+            ? dayjs(particularInvoiceNo.dueDate).add(30, 'day').format('DD-MM-YYYY')
+            : dayjs().add(30, 'day').format('DD-MM-YYYY'),
+          gstType: particularInvoiceNo.gstType,
+          igst: particularInvoiceNo.igst,
+          invoiceDate: particularInvoiceNo.invoiceDate ? dayjs(particularInvoiceNo.invoiceDate).format('DD-MM-YYYY') : dayjs(),
+          invoiceNo: particularInvoiceNo.invoiceNo,
+          notes: particularInvoiceNo.notes,
+          serviceMonth: particularInvoiceNo.serviceMonth,
+          sgst: particularInvoiceNo.sgst,
+          shipToAddress: particularInvoiceNo.shipToAddress,
+          subTotal: particularInvoiceNo.subTotal,
+          termsAndConditions: particularInvoiceNo.termsAndConditions,
+          term: particularInvoiceNo.term,
+          total: particularInvoiceNo.total
+        });
+
+        const mappedData = particularInvoiceNo.productLines.map((detail) => ({
+          id: detail.id,
+          amount: detail.amount,
+          description: detail.description,
+          quantity: detail.quantity,
+          rate: detail.rate
+        }));
+
+        console.log('Mapped Data for Child Table:', mappedData);
+
+        setChildTableData(mappedData);
+        setViewId(false);
+        // setViewId(row);
       } else {
         console.error('API Error:', response);
       }
@@ -211,252 +268,250 @@ const Invoice = () => {
 
   const handleSave = async () => {
     const errors = {};
-    if (!formData.cgst) errors.cgst = 'cgst is required';
-    if (!formData.termsAndConditions) errors.termsAndConditions = 'termsAndConditions is required';
-    if (!formData.sgst) errors.sgst = 'sgst is required';
-    if (!formData.gstType) errors.gstType = 'gstType is required';
-    if (!formData.tax) errors.tax = 'Tax is required';
-    if (!formData.taxpercentage) errors.taxpercentage = 'Taxpercentage is required';
-    if (!formData.notes) errors.notes = 'notes is required';
-    if (!formData.igst) errors.igst = 'igst is required';
-    if (!formData.subTotal) errors.subTotal = 'subTotal is required';
-    if (!formData.total) errors.total = 'total is required';
-    if (!formData.bankName) errors.bankName = 'Bank Name is required';
-    if (!formData.accountName) errors.accountName = 'Account Name is required';
-    if (!formData.accountNo) errors.accountNo = 'Account No is required';
-    if (!formData.iFSC) errors.iFSC = 'IFSC Code is required';
-    if (!formData.invoiceNo) errors.invoiceNo = 'Invoice Num is required';
-    if (!formData.term) errors.term = 'Term is required';
-    if (!formData.companyAddress) errors.companyAddress = 'Address is required';
-    if (!formData.invoiceDate) errors.invoiceDate = 'Invoice Date is required';
-    if (!formData.dueDate) errors.dueDate = 'Due Date is required';
-    if (!formData.serviceMonth) errors.serviceMonth = 'Service Month is required';
-    if (!formData.billToAddress) errors.billToAddress = 'Bill To Address is required';
-    if (!formData.shipToAddress) errors.shipToAddress = 'Ship To Address is required';
+
+    if (!formData.tax) {
+      errors.tax = 'Tax Percentage is required';
+    } else if (formData.tax === 'India') {
+      if (!formData.gstType) {
+        errors.gstType = 'GST Type is required';
+      }
+      if (formData.gstType === 'Intra') {
+        if (!formData.cgst) errors.cgst = 'CGST is required';
+        if (!formData.sgst) errors.sgst = 'SGST is required';
+        formData.taxpercentage = '';
+        formData.igst = '';
+      } else if (formData.gstType === 'Inter') {
+        if (!formData.igst) errors.igst = 'IGST is required';
+        formData.taxpercentage = '';
+        formData.cgst = '';
+        formData.sgst = '';
+      }
+    } else if (formData.tax === 'Others') {
+      if (!formData.taxpercentage) errors.tax = 'Tax Percentage is required';
+      formData.gstType = '';
+      formData.cgst = '';
+      formData.sgst = '';
+      formData.igst = '';
+    }
 
     let childTableDataValid = true;
-    if (!childTableData || !Array.isArray(childTableData) || childTableData.length === 0) {
+    const newTableErrors = [];
+
+    if (!Array.isArray(childTableData) || childTableData.length === 0) {
       childTableDataValid = false;
-      setChildTableErrors([{ general: 'Table Data is required' }]);
+      newTableErrors.push({ general: 'Table Data is required' });
     } else {
-      const newTableErrors = childTableData.map((row, index) => {
+      childTableData.forEach((row, index) => {
         const rowErrors = {};
-        if (!row.amount) rowErrors.amount = 'amount is required';
-        if (!row.rate) rowErrors.rate = 'rate is required';
-        if (!row.quantity) rowErrors.quantity = 'quantity is required';
-        if (!row.description) rowErrors.description = 'description is required';
+
+        if (!row.amount) rowErrors.amount = 'Amount is required';
+        if (!row.rate) rowErrors.rate = 'Rate is required';
+        if (!row.quantity) rowErrors.quantity = 'Quantity is required';
+        if (!row.description) rowErrors.description = 'Description is required';
 
         if (Object.keys(rowErrors).length > 0) {
           childTableDataValid = false;
+          newTableErrors[index] = rowErrors;
         }
-
-        return rowErrors;
       });
-
-      setChildTableErrors(newTableErrors);
     }
+
+    setChildTableErrors(newTableErrors);
+
+    // If validation fails, don't proceed
     if (!childTableDataValid || Object.keys(errors).length > 0) {
+      console.log('noerrors');
       setFieldErrors(errors);
       return false;
     }
 
-    if (childTableDataValid) {
-      setIsLoading(true);
-      const childVO = childTableData.map((row) => ({
-        amount: row.amount,
-        description: row.description,
-        quantity: row.quantity,
-        rate: row.rate
-      }));
+    setIsLoading(true);
+    // const requiredFields = [
+    //   'termsAndConditions',
+    //   'subTotal',
+    //   'total',
+    //   'bankName',
+    //   'accountName',
+    //   'accountNo',
+    //   'ifsc',
+    //   'invoiceNo',
+    //   'dueDate',
+    //   'invoiceDate',
+    //   'serviceMonth',
+    //   'companyAddress',
+    //   'billToAddress',
+    //   'shipToAddress'
+    // ];
 
-      const saveFormData = {
-        ...(editId && { id: editId }),
-        createdBy: loginUserName,
-        orgId: 1,
-        productLines: childVO,
+    // requiredFields.forEach((field) => {
+    //   if (!formData[field]) {
+    //     console.log('allok');
 
-        accountName: formData.accountName,
-        accountNo: formData.accountNo,
-        bankName: formData.bankName,
-        billToAddress: formData.billToAddress,
-        cgst: formData.cgst,
-        companyAddress: formData.companyAddress,
-        dueDate: formData.dueDate,
-        gstType: formData.gstType,
-        taxpercentage: formData.taxpercentage,
-        ifsc: formData.iFSC,
-        igst: formData.igst,
-        invoiceDate: formData.invoiceDate,
-        term: formData.term,
-        notes: formData.notes,
-        serviceMonth: formData.serviceMonth,
-        sgst: formData.sgst,
-        shipToAddress: formData.shipToAddress,
-        subTotal: formData.subTotal,
-        termsAndConditions: formData.termsAndConditions,
-        total: formData.total
-      };
+    //     errors[field] = `${field.replace(/([A-Z])/g, ' $1').trim()} is required`;
+    //   }
+    // });
 
-      console.log('DATA TO SAVE IS:', saveFormData);
-      try {
-        console.log('handlesave try working');
-        const response = await apiCalls('put', `master/createUpdateTaxInvoice`, saveFormData);
-        if (response.status === true) {
-          console.log('Response:', response);
-          handleClear();
-          showToast('success', editId ? ' Invoice Updated Successfully' : 'Invoice created successfully');
-          setIsLoading(false);
-        } else {
-          showToast('error', response.paramObjectsMap.message || 'Invoice Creation failed');
-          setIsLoading(false);
-        }
-      } catch (error) {
-        console.error('Error:', error);
-        showToast('error', ' Invoice failed');
-        setIsLoading(false);
+    const childVO = childTableData.map((row) => ({
+      amount: row.amount,
+      description: row.description,
+      quantity: row.quantity,
+      rate: row.rate
+    }));
+
+    const saveFormData = {
+      ...(editId && { id: editId }),
+      createdBy: loginUserName,
+      orgId: 1,
+      productLines: childVO,
+      billToAddress: formData.billToAddress,
+      cgst: formData.cgst,
+      companyAddress: formData.companyAddress,
+      dueDate: dayjs().add(30, 'day').format('YYYY-MM-DD'),
+      gstType: formData.gstType,
+      tax: formData.taxpercentage,
+      // taxpercentage: formData.taxpercentage,
+      igst: formData.igst,
+      invoiceDate: dayjs().format('YYYY-MM-DD'),
+      invoiceNo: formData.invoiceNo,
+      term: formData.term,
+      notes: formData.notes,
+      serviceMonth: formData.serviceMonth,
+      sgst: formData.sgst,
+      shipToAddress: formData.shipToAddress,
+      subTotal: formData.subTotal,
+      termsAndConditions: formData.termsAndConditions,
+      total: formData.total,
+      // Bank Details
+      bankName: formData.bankName,
+      accountName: formData.accountName,
+      accountNo: formData.accountNo,
+      ifsc: formData.ifsc
+    };
+
+    console.log('DATA TO SAVE IS:', saveFormData);
+
+    try {
+      const response = await apiCalls('put', `master/createUpdateTaxInvoice`, saveFormData);
+      if (response.status) {
+        console.log('Response:', response);
+        handleClear();
+        showToast('success', editId ? 'Invoice Updated Successfully' : 'Invoice created successfully');
+      } else {
+        showToast('error', response.paramObjectsMap.message || 'Invoice Creation failed');
       }
+    } catch (error) {
+      console.error('Error:', error);
+      showToast('error', 'Invoice failed');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const validateField = (field, value, formData) => {
+    let error = '';
+
+    // Regular expressions for different field types
+    const numberRegex = /^[0-9]+$/; // Only digits
+    const decimalRegex = /^\d+(\.\d{1,2})?$/; // Validates decimal numbers
+    const dateRegex = /^(0[1-9]|[12][0-9]|3[01])-(0[1-9]|1[012])-\d{4}$/; // DD-MM-YYYY format
+    const codeRedex = /^[A-Za-z0-9]+$/;
+
+    // switch (field) {
+    //   case 'invoiceNo':
+    //     if (!value) {
+    //       error = 'Invoice Number is required';
+    //     } else if (!codeRedex.test(value)) {
+    //       error = 'Invalid Invoice Number';
+    //     }
+    //     break;
+    //   case 'tax':
+    //     if (formData.tax === 'India') {
+    //       if (!value) {
+    //         error = 'Tax Percentage is required';
+    //       }
+    //       //  else if (!value) {
+    //       //   error = 'Tax Percentage must be a valid number with up to 2 decimal places';
+    //       // }
+    //     }
+    //     break;
+    //   case 'cgst':
+    //   case 'sgst':
+    //     if (formData.gstType === 'Inter') {
+    //       if (!value) {
+    //         error = `${field} is required`;
+    //       }
+    //       //  else if (!decimalRegex.test(value)) {
+    //       //   error = `${field} must be a valid number (up to 2 decimal places)`;
+    //       // }
+    //     }
+    //     break;
+    //   case 'subTotal':
+    //   case 'total':
+    //   case 'amount':
+    //     if (!value) {
+    //       error = 'This field is required';
+    //     } else if (!decimalRegex.test(value)) {
+    //       error = 'Must be a valid number (up to 2 decimal places)';
+    //     }
+    //     break;
+    //   case 'invoiceDate':
+    //   case 'dueDate':
+    //     if (!value) {
+    //       error = 'Date is required';
+    //     } else if (!dateRegex.test(value)) {
+    //       error = 'Invalid date format (DD-MM-YYYY)';
+    //     }
+    //     break;
+    //   default:
+    //     break;
+    // }
+
+    return error;
+  };
+
+  const handleInputChange = (e, index, fieldName) => {
+    const { name, value } = e.target;
+
+    // Update form data before validating
+    const updatedFormData = { ...formData, [name]: value };
+    const error = validateField(name, value, updatedFormData);
+
+    if (typeof index === 'number') {
+      const updatedChildTableData = [...childTableData];
+      updatedChildTableData[index][fieldName] = value;
+
+      const updatedChildTableErrors = [...childTableErrors];
+      updatedChildTableErrors[index][fieldName] = error;
+
+      setChildTableData(updatedChildTableData);
+      setChildTableErrors(updatedChildTableErrors);
     } else {
-      setFieldErrors(errors);
-    }
-    return true;
-  };
+      const updatedFieldErrors = { ...fieldErrors, [name]: error };
 
-  const handleGenerate = () => {};
-
-  const handleFileChange = (event) => {
-    const selectedFile = event.target.files[0];
-    setFile(selectedFile);
-  };
-  const handleChange = (event) => {
-    setText(event.target.value);
-  };
-
-  const handleDateChange = () => {};
-
-  const addNewRow = () => {
-    const newRow = { id: rows.length + 1, name: '', qty: '', rate: '', amount: '' };
-    setRows([...rows, newRow]);
-  };
-
-  // const handleInputChange = (event, index = null) => {
-  //   const { name, value } = event.target;
-  //   const addressRegex = /^[a-zA-Z0-9\s,.-]*$/;
-  //   const codeRegex = /^[a-zA-Z0-9#_\-\/\\]*$/;
-  //   const numberRegex = /^\d*\.?\d*$/;
-  //   const taxPercentageRegex = /^(100(\.0{1,2})?|[1-9]?\d(\.\d{1,2})?)$/;
-  //   const ifscRegex = /^[A-Z]{4}0[A-Z0-9]{6}$/;
-
-  //   if ((name === 'invoiceNo' || name === 'term') && !codeRegex.test(value)) {
-  //     setFieldErrors((prevErrors) => ({ ...prevErrors, [name]: 'Invalid Format' }));
-  //   }
-  //   if ((name === 'billToAddress' || name === 'shipToAddress' || name === 'companyAddress') && !addressRegex.test(value)) {
-  //     setFieldErrors((prevErrors) => ({ ...prevErrors, [name]: 'Invalid Format' }));
-  //   }
-  //   if ((name === 'cgst' || name === 'sgst' || name === 'igst' || name === 'total' || name === 'subTotal' || name === 'accountNo') && !numberRegex.test(value)) {
-  //     setFieldErrors((prevErrors) => ({ ...prevErrors, [name]: 'Invalid Format' }));
-  //   }
-  //   if (name === 'taxpercentage' && !taxPercentageRegex.test(value)) {
-  //     setFieldErrors((prevErrors) => ({ ...prevErrors, [name]: 'Invalid Format' }));
-  //   }
-  //   if (name === 'iFSC' && !ifscRegex.test(value)) {
-  //     setFieldErrors((prevErrors) => ({ ...prevErrors, [name]: 'Invalid Format' }));
-  //   } else {
-  //     setFormData((prevData) => ({ ...prevData, [name]: value.toUpperCase() }));
-  //     setFieldErrors((prevErrors) => ({ ...prevErrors, [name]: '' }));
-  //   }
-
-  //   if (index !== null) {
-  //     const updatedRows = rows.map((row, i) => {
-  //       if (i === index) {
-  //         const updatedRow = { ...row, [name]: value };
-  //         if (name === 'qty' || name === 'rate') {
-  //           const qty = updatedRow.qty || 0;
-  //           const rate = updatedRow.rate || 0;
-  //           updatedRow.amount = qty * rate;
-  //         }
-  //         return updatedRow;
-  //       }
-  //       return row;
-  //     });
-  //     setRows(updatedRows);
-  //   } else {
-  //     setFormData((prevData) => ({
-  //       ...prevData,
-  //       [name]: value
-  //     }));
-  //   }
-  // };
-
-  const handleInputChange = (event, index = null) => {
-    const { name, value } = event.target;
-    // const addressRegex = /^[a-zA-Z0-9\s,.-]*$/;
-    // const codeRegex = /^[a-zA-Z0-9#_\-\/\\]*$/;
-    // const numberRegex = /^\d*\.?\d*$/;
-    // const taxPercentageRegex = /^(100(\.0{1,2})?|[1-9]?\d(\.\d{1,2})?)$/;
-    // const ifscRegex = /^[A-Z]{4}0[A-Z0-9]{6}$/;
-  
-    let errors = {}; 
-  
-    // Validation checks
-    // if ((name === 'invoiceNo' || name === 'term') && !codeRegex.test(value)) {
-    //   errors[name] = 'Invalid Format';
-    // }
-    // if ((name === 'billToAddress' || name === 'shipToAddress' || name === 'companyAddress') && !addressRegex.test(value)) {
-    //   errors[name] = 'Invalid Format';
-    // }
-    // if ((name === 'cgst' || name === 'sgst' || name === 'igst' || name === 'total' || name === 'subTotal' || name === 'accountNo') && !numberRegex.test(value)) {
-    //   errors[name] = 'Invalid Format';
-    // }
-    // if (name === 'taxpercentage' && !taxPercentageRegex.test(value)) {
-    //   errors[name] = 'Invalid Format';
-    // }
-    // if (name === 'iFSC' && !ifscRegex.test(value)) {
-    //   errors[name] = 'Invalid Format';
-    // }
-  
-    setFieldErrors((prevErrors) => ({ ...prevErrors, ...errors }));
-  
-    // Proceed with updating form data if no errors
-    if (Object.keys(errors).length === 0) {
-      setFormData((prevData) => ({
-        ...prevData,
-        // [name]: name === 'iFSC' ? value.toUpperCase() : value, // Uppercase only for iFSC
-      }));
-    }
-  
-    if (index !== null) {
-      const updatedRows = rows.map((row, i) => {
-        if (i === index) {
-          const updatedRow = { ...row, [name]: value };
-          if (name === 'qty' || name === 'rate') {
-            const qty = updatedRow.qty || 0;
-            const rate = updatedRow.rate || 0;
-            updatedRow.amount = qty * rate;
-          }
-          return updatedRow;
-        }
-        return row;
-      });
-      setRows(updatedRows);
+      setFormData(updatedFormData);
+      setFieldErrors(updatedFieldErrors);
     }
   };
-  
 
   const handleDeleteRow = (id) => {
-    const updatedRows = rows.filter((row) => row.id !== id);
-    setRows(updatedRows);
+    const updatedTableData = childTableData.filter((row) => row.id !== id);
+    const updatedTableErrors = childTableErrors.filter((_, index) => childTableData[index].id !== id);
+
+    setChildTableData(updatedTableData);
+    setChildTableErrors(updatedTableErrors);
   };
+
   const handleClear = () => {
     setFormData({
       billToAddress: '',
       cgst: '',
       companyAddress: '',
-      dueDate: '',
+      dueDate: dayjs().add(30, 'day').format('DD-MM-YYYY'),
       gstType: '',
       tax: '',
       taxpercentage: '',
       igst: '',
-      invoiceDate: '',
+      invoiceDate: dayjs().format('DD-MM-YYYY'),
       invoiceNo: '',
       term: '',
       notes: '',
@@ -470,7 +525,7 @@ const Invoice = () => {
       bankName: '',
       accountName: '',
       accountNo: '',
-      iFSC: ''
+      ifsc: ''
     });
     setFieldErrors({
       billToAddress: '',
@@ -495,7 +550,7 @@ const Invoice = () => {
       bankName: '',
       accountName: '',
       accountNo: '',
-      iFSC: ''
+      ifsc: ''
     });
     setChildTableErrors([]);
     setChildTableData([]);
@@ -504,9 +559,7 @@ const Invoice = () => {
   const handleTapChange = (event, newValue) => {
     setValue(newValue);
   };
-  const getTaxInvoiceById = () => {
-    setListView(false);
-  };
+
   const handleView = () => {
     setListView(!listView);
     setDownloadPdf(false);
@@ -525,9 +578,30 @@ const Invoice = () => {
         <div className="row d-flex ml">
           <div className="d-flex flex-wrap justify-content-start mb-2" style={{ marginBottom: '20px' }}>
             <ActionButton title="Clear" icon={ClearIcon} onClick={handleClear} />
-            <ActionButton title="Save" icon={SaveIcon} onClick={handleSave} />
             <ActionButton title="List View" icon={FormatListBulletedTwoToneIcon} onClick={handleView} />
-            <ActionButton title="Generate" icon={RiAiGenerate} onClick={handleGenerate} />
+            <ActionButton title="Save" icon={SaveIcon} onClick={handleSave} />
+            {/* <ActionButton title="Upload" type="file" accept="image/*" icon={ImageIcon} onClick={handleImageChange} /> */}
+            <div>
+              {/* <input
+                accept="image/*"
+                style={{ display: 'none' }} // Hide input
+                id="upload-button"
+                type="file"
+                onChange={handleImageChange}
+              />
+
+              <label htmlFor="upload-button">
+                <Button variant="contained" component="span" startIcon={<ImageIcon />}>
+                  Upload Image
+                </Button>
+              </label> */}
+
+              {/* {selectedImage && (
+                <div style={{ marginTop: '20px' }}>
+                  <img src={selectedImage} alt="Selected" width="200px" height="200px" />
+                </div>
+              )} */}
+            </div>
           </div>
         </div>
         {listView ? (
@@ -603,7 +677,7 @@ const Invoice = () => {
 
               <div className="col-md-6 mb-3">
                 <TextField
-                  label="Bill To Address"
+                  label="Customer"
                   variant="outlined"
                   size="small"
                   fullWidth
@@ -617,7 +691,7 @@ const Invoice = () => {
 
               <div className="col-md-6 mb-3">
                 <TextField
-                  label="Ship To Address"
+                  label="Address"
                   variant="outlined"
                   size="small"
                   fullWidth
@@ -656,90 +730,95 @@ const Invoice = () => {
                   helperText={fieldErrors.companyAddress}
                 />
               </div>
-
               <div className="col-md-3 mb-3">
-                <TextField
-                  label="Tax"
-                  variant="outlined"
-                  size="small"
-                  fullWidth
-                  name="tax"
-                  value={formData.tax}
-                  onChange={handleInputChange}
-                  error={!!fieldErrors.tax}
-                  helperText={fieldErrors.tax}
-                />
+                <FormControl variant="outlined" size="small" fullWidth error={!!fieldErrors.tax}>
+                  <InputLabel>Tax</InputLabel>
+                  <Select name="tax" value={formData.tax} onChange={handleInputChange} label="Tax">
+                    <MenuItem value=""></MenuItem>
+                    <MenuItem value="India">India</MenuItem>
+                    <MenuItem value="Others">Others</MenuItem>
+                  </Select>
+                  <FormHelperText>{fieldErrors.tax}</FormHelperText>
+                </FormControl>
               </div>
 
-              <div className="col-md-3 mb-3">
-                <TextField
-                  label="Tax Percentage %"
-                  variant="outlined"
-                  size="small"
-                  fullWidth
-                  name="taxpercentage"
-                  value={formData.taxpercentage}
-                  onChange={handleInputChange}
-                  error={!!fieldErrors.taxpercentage}
-                  helperText={fieldErrors.taxpercentage}
-                />
-              </div>
+              {formData.tax === 'Others' && (
+                <div className="col-md-3 mb-3">
+                  <TextField
+                    label="Tax Percentage %"
+                    variant="outlined"
+                    size="small"
+                    fullWidth
+                    name="taxpercentage"
+                    value={formData.taxpercentage}
+                    onChange={handleInputChange}
+                    error={!!fieldErrors.taxpercentage}
+                    helperText={fieldErrors.taxpercentage}
+                  />
+                </div>
+              )}
 
-              <div className="col-md-3 mb-3">
-                <TextField
-                  label="GST Type"
-                  variant="outlined"
-                  size="small"
-                  fullWidth
-                  name="gstType"
-                  value={formData.gstType}
-                  onChange={handleInputChange}
-                  error={!!fieldErrors.gstType}
-                  helperText={fieldErrors.gstType}
-                />
-              </div>
+              {formData.tax === 'India' && (
+                <div className="col-md-3 mb-3">
+                  <FormControl variant="outlined" size="small" fullWidth error={!!fieldErrors.gstType}>
+                    <InputLabel>GST Type</InputLabel>
+                    <Select name="gstType" value={formData.gstType} onChange={handleInputChange} label="gstType">
+                      <MenuItem value=""></MenuItem>
+                      <MenuItem value="Intra">Intra</MenuItem>
+                      <MenuItem value="Inter">Inter</MenuItem>
+                    </Select>
+                    <FormHelperText>{fieldErrors.gstType}</FormHelperText>
+                  </FormControl>
+                </div>
+              )}
 
-              <div className="col-md-3 mb-3">
-                <TextField
-                  label="IGST"
-                  variant="outlined"
-                  size="small"
-                  fullWidth
-                  name="igst"
-                  value={formData.igst}
-                  onChange={handleInputChange}
-                  error={!!fieldErrors.igst}
-                  helperText={fieldErrors.igst}
-                />
-              </div>
+              {formData.gstType === 'Inter' && formData.tax === 'India' && (
+                <div className="col-md-3 mb-3">
+                  <TextField
+                    label="IGST"
+                    variant="outlined"
+                    size="small"
+                    fullWidth
+                    name="igst"
+                    value={formData.igst}
+                    onChange={handleInputChange}
+                    error={!!fieldErrors.igst}
+                    helperText={fieldErrors.igst}
+                  />
+                </div>
+              )}
 
-              <div className="col-md-3 mb-3">
-                <TextField
-                  label="SGST"
-                  variant="outlined"
-                  size="small"
-                  fullWidth
-                  name="sgst"
-                  value={formData.sgst}
-                  onChange={handleInputChange}
-                  error={!!fieldErrors.sgst}
-                  helperText={fieldErrors.sgst}
-                />
-              </div>
+              {formData.gstType === 'Intra' && formData.tax === 'India' && (
+                <>
+                  <div className="col-md-3 mb-3">
+                    <TextField
+                      label="CGST"
+                      variant="outlined"
+                      size="small"
+                      fullWidth
+                      name="cgst"
+                      value={formData.cgst}
+                      onChange={handleInputChange}
+                      error={!!fieldErrors.cgst}
+                      helperText={fieldErrors.cgst}
+                    />
+                  </div>
 
-              <div className="col-md-3 mb-3">
-                <TextField
-                  label="CGST"
-                  variant="outlined"
-                  size="small"
-                  fullWidth
-                  name="cgst"
-                  value={formData.cgst}
-                  onChange={handleInputChange}
-                  error={!!fieldErrors.cgst}
-                  helperText={fieldErrors.cgst}
-                />
-              </div>
+                  <div className="col-md-3 mb-3">
+                    <TextField
+                      label="SGST"
+                      variant="outlined"
+                      size="small"
+                      fullWidth
+                      name="sgst"
+                      value={formData.sgst}
+                      onChange={handleInputChange}
+                      error={!!fieldErrors.sgst}
+                      helperText={fieldErrors.sgst}
+                    />
+                  </div>
+                </>
+              )}
 
               <div className="col-md-3 mb-3">
                 <TextField
@@ -822,143 +901,81 @@ const Invoice = () => {
                                 <thead>
                                   <tr style={{ backgroundColor: '#673AB7' }}>
                                     {!viewId && (
-                                      <>
-                                        <th className="px-2 py-2 text-white text-center" style={{ width: '68px' }}>
-                                          Action
-                                        </th>
-                                      </>
+                                      <th className="px-2 py-2 text-white text-center" style={{ width: '68px' }}>
+                                        Action
+                                      </th>
                                     )}
                                     <th className="px-2 py-2 text-white text-center" style={{ width: '50px' }}>
-                                      {' '}
                                       S.No
                                     </th>
-                                    <th className="px-2 py-2 text-white text-center">Item & Description</th>
-                                    <th className="px-2 py-2 text-white text-center">Quantity</th>
-                                    <th className="px-2 py-2 text-white text-center">Rate</th>
-                                    <th className="px-2 py-2 text-white text-center">Amount</th>
+                                    <th className="px-2 py-2 text-white text-center">Description*</th>
+                                    <th className="px-2 py-2 text-white text-center">Quantity *</th>
+                                    <th className="px-2 py-2 text-white text-center">Rate *</th>
+                                    <th className="px-2 py-2 text-white text-center">Amount *</th>
                                   </tr>
                                 </thead>
-                                {!viewId ? (
-                                  <>
-                                    <tbody>
-                                      {childTableData.length === 0 ? (
-                                        <tr>
-                                          <td colSpan="18" className="text-center py-2">
-                                            No Data Found
-                                          </td>
-                                        </tr>
-                                      ) : (
-                                        childTableData.map((row, index) => (
-                                          <tr key={row.id}>
-                                            {!viewId && (
-                                              <>
-                                                <td className="border px-2 py-2 text-center">
-                                                  <ActionButton
-                                                    title="Delete"
-                                                    icon={DeleteIcon}
-                                                    onClick={() =>
-                                                      handleDeleteRow(
-                                                        row.id,
-                                                        childTableData,
-                                                        setChildTableData,
-                                                        childTableErrors,
-                                                        setChildTableErrors
-                                                      )
-                                                    }
-                                                  />
-                                                </td>
-                                              </>
-                                            )}
-                                            <td className="text-center">
-                                              <div className="pt-2">{index + 1}</div>
-                                            </td>
-
-                                            <td className="border px-2 py-2">
-                                              <input
-                                                type="text"
-                                                value={row.description}
-                                                onChange={(e) => {
-                                                  const updatedTableData = [...childTableData];
-                                                  updatedTableData[index].description = e.target.value;
-                                                  setChildTableData(updatedTableData);
-                                                }}
-                                                style={{ width: '180px' }}
-                                                className={childTableErrors[index]?.description ? 'error form-control' : 'form-control'}
-                                              />
-                                              {childTableErrors[index]?.description && (
-                                                <div style={{ color: 'red', fontSize: '12px' }}>{childTableErrors[index].description}</div>
-                                              )}
-                                            </td>
-
-                                            <td className="border px-2 py-2">
-                                              <input
-                                                type="text"
-                                                value={row.quantity}
-                                                onChange={(e) => {
-                                                  const updatedTableData = [...childTableData];
-                                                  updatedTableData[index].quantity = e.target.value;
-                                                  setChildTableData(updatedTableData);
-                                                }}
-                                                style={{ width: '180px' }}
-                                                className={childTableErrors[index]?.quantity ? 'error form-control' : 'form-control'}
-                                              />
-                                              {childTableErrors[index]?.quantity && (
-                                                <div style={{ color: 'red', fontSize: '12px' }}>{childTableErrors[index].quantity}</div>
-                                              )}
-                                            </td>
-
-                                            <td className="border px-2 py-2">
-                                              <input
-                                                type="text"
-                                                value={row.rate}
-                                                onChange={(e) => {
-                                                  const updatedTableData = [...childTableData];
-                                                  updatedTableData[index].rate = e.target.value;
-                                                  setChildTableData(updatedTableData);
-                                                }}
-                                                style={{ width: '180px' }}
-                                                className={childTableErrors[index]?.rate ? 'error form-control' : 'form-control'}
-                                              />
-                                              {childTableErrors[index]?.rate && (
-                                                <div style={{ color: 'red', fontSize: '12px' }}>{childTableErrors[index].rate}</div>
-                                              )}
-                                            </td>
-
-                                            <td className="border px-2 py-2">
-                                              <input
-                                                type="number"
-                                                value={row.amount}
-                                                onChange={(e) => {
-                                                  const updatedTableData = [...childTableData];
-                                                  updatedTableData[index].amount = e.target.value;
-                                                  setChildTableData(updatedTableData);
-                                                }}
-                                                style={{ width: '180px' }}
-                                                className={childTableErrors[index]?.amount ? 'error form-control' : 'form-control'}
-                                              />
-                                              {childTableErrors[index]?.amount && (
-                                                <div style={{ color: 'red', fontSize: '12px' }}>{childTableErrors[index].amount}</div>
-                                              )}
-                                            </td>
-                                          </tr>
-                                        ))
-                                      )}
-                                    </tbody>
-                                    {childTableErrors.some((error) => error.general) && (
-                                      <tfoot>
-                                        <tr>
-                                          <td colSpan={13} className="error-message">
-                                            <div style={{ color: 'red', fontSize: '14px', textAlign: 'center' }}>
-                                              {childTableErrors.find((error) => error.general)?.general}
-                                            </div>
-                                          </td>
-                                        </tr>
-                                      </tfoot>
-                                    )}
-                                  </>
-                                ) : (
-                                  <></>
-                                )}
+                                <tbody>
+                                  {childTableData.length === 0 ? (
+                                    <tr>
+                                      <td colSpan="18" className="text-center py-2">
+                                        No Data Found
+                                      </td>
+                                    </tr>
+                                  ) : (
+                                    childTableData.map((row, index) => (
+                                      <tr key={row.id}>
+                                        <td className="border px-2 py-2 text-center">
+                                          <ActionButton title="Delete" icon={DeleteIcon} onClick={() => handleDeleteRow(row.id)} />
+                                        </td>
+                                        <td className="text-center">{index + 1}</td>
+                                        <td className="border px-2 py-2">
+                                          <input
+                                            type="text"
+                                            value={row.description}
+                                            onChange={(e) => handleInputChange(e, index, 'description')}
+                                            className={childTableErrors[index]?.description ? 'error form-control' : 'form-control'}
+                                          />
+                                          {childTableErrors[index]?.description && (
+                                            <div className="text-danger">{childTableErrors[index].description}</div>
+                                          )}
+                                        </td>
+                                        <td className="border px-2 py-2">
+                                          <input
+                                            type="text"
+                                            value={row.quantity}
+                                            onChange={(e) => handleInputChange(e, index, 'quantity')}
+                                            className={childTableErrors[index]?.quantity ? 'error form-control' : 'form-control'}
+                                          />
+                                          {childTableErrors[index]?.quantity && (
+                                            <div className="text-danger">{childTableErrors[index].quantity}</div>
+                                          )}
+                                        </td>
+                                        <td className="border px-2 py-2">
+                                          <input
+                                            type="text"
+                                            value={row.rate}
+                                            onChange={(e) => handleInputChange(e, index, 'rate')}
+                                            className={childTableErrors[index]?.rate ? 'error form-control' : 'form-control'}
+                                          />
+                                          {childTableErrors[index]?.rate && (
+                                            <div className="text-danger">{childTableErrors[index].rate}</div>
+                                          )}
+                                        </td>
+                                        <td className="border px-2 py-2">
+                                          <input
+                                            type="text"
+                                            value={row.amount}
+                                            onChange={(e) => handleInputChange(e, index, 'amount')}
+                                            className={childTableErrors[index]?.amount ? 'error form-control' : 'form-control'}
+                                          />
+                                          {childTableErrors[index]?.amount && (
+                                            <div className="text-danger">{childTableErrors[index].amount}</div>
+                                          )}
+                                        </td>
+                                      </tr>
+                                    ))
+                                  )}
+                                </tbody>
                               </table>
                             </div>
                           </div>
@@ -982,7 +999,6 @@ const Invoice = () => {
                               error={!!fieldErrors.bankName}
                               helperText={fieldErrors.bankName}
                             />
-                            {/* {errors.bankName && <span style={{ color: 'red' }}>{errors.bankName}</span>} */}
                           </div>
                           <div className="col-md-3">
                             <TextField
@@ -996,7 +1012,6 @@ const Invoice = () => {
                               error={!!fieldErrors.accountNo}
                               helperText={fieldErrors.accountNo}
                             />
-                            {/* {errors.accountNo && <span style={{ color: 'red' }}>{errors.accountNo}</span>} */}
                           </div>
                           <div className="col-md-3">
                             <TextField
@@ -1010,7 +1025,6 @@ const Invoice = () => {
                               error={!!fieldErrors.accountName}
                               helperText={fieldErrors.accountName}
                             />
-                            {/* {errors.accountName && <span style={{ color: 'red' }}>{errors.accountName}</span>} */}
                           </div>
                           <div className="col-md-3">
                             <TextField
@@ -1018,13 +1032,12 @@ const Invoice = () => {
                               fullWidth
                               label="IFSC"
                               margin="normal"
-                              name="iFSC"
-                              value={formData.iFSC}
+                              name="ifsc"
+                              value={formData.ifsc}
                               onChange={handleInputChange}
-                              error={!!fieldErrors.iFSC}
-                              helperText={fieldErrors.iFSC}
+                              error={!!fieldErrors.ifsc}
+                              helperText={fieldErrors.ifsc}
                             />
-                            {/* {errors.iFSC && <span style={{ color: 'red' }}>{errors.iFSC}</span>} */}
                           </div>
                         </div>
                       </>

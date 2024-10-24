@@ -28,7 +28,7 @@ const InvoicePdfGen = ({ row, callBackFunction }) => {
 
       const pdf = new jsPDF();
       pdf.addImage(imgData, 'PNG', 0, 0);
-      pdf.save(`GRN_${row.grnNo}.pdf`);
+      pdf.save(`Invoice_${row.invoiceNo}.pdf`);
 
       handleClose();
     } else {
@@ -61,17 +61,18 @@ const InvoicePdfGen = ({ row, callBackFunction }) => {
       fullWidth
       onEntered={handleDownloadPdf} // Ensure content is fully rendered before generating PDF
     >
-      <DialogTitle>PDF Preview</DialogTitle>
       <DialogContent>
+        <div className="mt-2 text-center">
+          <strong>Invoice</strong>
+        </div>
         <div
           id="pdf-content"
           style={{
             padding: '20px',
-            backgroundColor: '#f9f9f9',
             width: '210mm',
             height: 'auto',
             margin: 'auto',
-            fontFamily: 'Roboto, Arial, sans-serif',
+            // fontFamily: 'Roboto, Arial, sans-serif',
             position: 'relative'
           }}
         >
@@ -82,17 +83,39 @@ const InvoicePdfGen = ({ row, callBackFunction }) => {
               justifyContent: 'space-between',
               fontSize: '16px',
               marginBottom: '20px',
-              borderBottom: '2px solid #000000',
-              paddingBottom: '10px',
-              color: '#333'
+              borderBottom: '1px solid #000000',
+              paddingBottom: '10px'
+              // color: '#333'
             }}
           >
-            <div>EFit QrBar Code</div>
-            <div>Invoice</div>
+            {/* <div>EFit QrBar Code</div>
+            <div>Invoice</div> */}
             <div>{localStorage.getItem('branch')}</div>
           </div>
 
           {/* <!-- Details Section --> */}
+          <div>
+            <div className="mb-3">
+              <strong>Invoice No : </strong>
+              <span>{row.invoiceNo}</span>
+            </div>
+            <div className="mb-3">
+              <strong>Invoice Date : </strong>
+              <span> {row.invoiceDate}</span>
+            </div>
+            <div className="mb-3">
+              <strong>Term : </strong>
+              <span>{row.term}</span>
+            </div>
+            <div className="mb-3">
+              <strong>Due Date : </strong>
+              <span>{row.dueDate}</span>
+            </div>
+            <div className="mb-3">
+              <strong>Total : </strong>
+              <span>{row.total}</span>
+            </div>
+          </div>
           <div
             style={{
               marginBottom: '20px',
@@ -103,41 +126,45 @@ const InvoicePdfGen = ({ row, callBackFunction }) => {
             }}
           >
             <div>
-              <div>
-                <strong>Supplier:</strong> {row.supplier}
+              <div className="mb-3">
+                <strong>Bill To Address : </strong>
+                <span> {row.billToAddress}</span>
               </div>
-              <div>
-                <strong>Type:</strong> Auto
+              <div className="mb-3">
+                <strong>Service Month : </strong>
+                <span> {row.serviceMonth}</span>
               </div>
-              <div>
-                <strong>Invoice No:</strong>
-                {row.invoiceNo}
+              <div className="mb-3">
+                <strong>Tax : </strong>
+                <span>{row.tax}</span>
+              </div>
+              <div className="mb-3">
+                <strong>Total : </strong>
+                <span> {row.total}</span>
+              </div>
+              <div className="mb-3">
+                <strong>Notes : </strong>
+                <span>{row.notes}</span>
               </div>
             </div>
             <div style={{ textAlign: 'lrft' }}>
-              <div>
-                <strong>Client:</strong> {row.client}
+              <div className="mb-3">
+                <strong>Ship To Address : </strong>
+                <span>{row.shipToAddress}</span>
               </div>
-              <div>
-                <strong>DUE Date:</strong> {row.dueDate}
+              <div className="mb-3">
+                <strong>Company Address : </strong>
+                <span> {row.companyAddress}</span>
               </div>
-              <div>
-                <strong>INVOICE Date:</strong> {row.invoiceDate}
+              <div className="mb-3">
+                <strong>Subtotal : </strong>
+                <span> {row.subTotal}</span>
+              </div>
+              <div className="mb-3">
+                <strong>Terms and Conditions : </strong>
+                <span> {row.termsAndConditions}</span>
               </div>
             </div>
-          </div>
-
-          {/* <!-- Footer Section --> */}
-          <div
-            style={{
-              marginBottom: '20px',
-              textAlign: 'left',
-              fontSize: '12px',
-              color: '#777'
-            }}
-          >
-            <div>{currentDateTime}</div>
-            <div>Printed By: {localStorage.getItem('userName')}</div>
           </div>
 
           {/* <!-- Table Section --> */}
@@ -151,51 +178,25 @@ const InvoicePdfGen = ({ row, callBackFunction }) => {
             }}
           >
             <thead>
-              <tr style={{ backgroundColor: '#673ab7', color: '#fff' }}>
-                <th style={{ border: '1px solid #000000', padding: '10px' }}>Sl.</th>
-                <th style={{ border: '1px solid #000000', padding: '10px' }}>Part Code</th>
-                <th style={{ border: '1px solid #000000', padding: '10px' }}>Part Description</th>
-                <th style={{ border: '1px solid #000000', padding: '10px' }}>Batch</th>
-                <th style={{ border: '1px solid #000000', padding: '10px' }}>Unit</th>
-                <th style={{ border: '1px solid #000000', padding: '10px' }}>P. Qty</th>
+              <tr style={{ fontWeight: 'bold' }}>
+                <th style={{ border: '1px solid #000000', padding: '10px' }}>S.No </th>
+                <th style={{ border: '1px solid #000000', padding: '10px' }}>Description *</th>
+                <th style={{ border: '1px solid #000000', padding: '10px' }}>Quantity *</th>
+                <th style={{ border: '1px solid #000000', padding: '10px' }}>Rate *</th>
+                <th style={{ border: '1px solid #000000', padding: '10px' }}>Amount *</th>
+                {/* <th style={{ border: '1px solid #000000', padding: '10px' }}>P. Qty</th>
                 <th style={{ border: '1px solid #000000', padding: '10px' }}>Location</th>
-                <th style={{ border: '1px solid #000000', padding: '10px' }}>Tick</th>
+                <th style={{ border: '1px solid #000000', padding: '10px' }}>Tick</th> */}
               </tr>
             </thead>
             <tbody>
-              {row.putAwayDetailsVO?.map((item, index) => (
+              {row.productLines?.map((item, index) => (
                 <tr key={index} style={{ borderBottom: '1px solid #000000' }}>
                   <td style={{ border: '1px solid #000000', padding: '10px' }}>{index + 1}</td>
-                  <td style={{ border: '1px solid #000000', padding: '10px' }}>{item.partNo}</td>
-                  <td style={{ border: '1px solid #000000', padding: '10px' }}>{item.partDesc}</td>
-                  <td style={{ border: '1px solid #000000', padding: '10px' }}>{item.batch || ''}</td>
-                  <td style={{ border: '1px solid #000000', padding: '10px' }}>{item.sku}</td>
-                  <td style={{ border: '1px solid #000000', padding: '10px' }}>{item.putAwayQty}</td>
-                  <td style={{ border: '1px solid #000000', padding: '10px' }}>{item.bin}</td>
-                  <td
-                    style={{
-                      border: '1px solid #000000',
-                      padding: '10px',
-                      textAlign: 'center'
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: 'inline-block',
-                        width: '20px',
-                        height: '20px',
-                        borderRadius: '50%',
-                        border: '1px solid #333',
-                        textAlign: 'center',
-                        lineHeight: '20px',
-                        fontSize: '16px'
-                      }}
-                    >
-                      {/* Uncomment the line below to display a checked checkbox */}
-                      {/* ☑ */}
-                      {/* Uncomment the line below to display an unchecked checkbox */}
-                    </div>
-                  </td>
+                  <td style={{ border: '1px solid #000000', padding: '10px' }}>{item.description}</td>
+                  <td style={{ border: '1px solid #000000', padding: '10px' }}>{item.quantity}</td>
+                  <td style={{ border: '1px solid #000000', padding: '10px' }}>{item.rate}</td>
+                  <td style={{ border: '1px solid #000000', padding: '10px' }}>{item.amount}</td>
                 </tr>
               ))}
             </tbody>
@@ -210,7 +211,30 @@ const InvoicePdfGen = ({ row, callBackFunction }) => {
               color: '#333'
             }}
           >
-            Total: {row.putAwayDetailsVO?.reduce((sum, item) => sum + item.putAwayQty, 0)}
+            Total: {row.productLines?.reduce((sum, item) => sum + item.putAwayQty, 0)}
+          </div>
+
+          <div>
+            <div className="mb-3">
+              <strong>BankName : </strong>
+              {row.bankName}
+            </div>
+            <div className="mb-3">
+              <strong>AccountNo : </strong>
+              {row.accountNo}
+            </div>
+            <div className="mb-3">
+              <strong>Account Name : </strong>
+              {row.accountName}
+            </div>
+            <div className="mb-3">
+              <strong>Term : </strong>
+              {row.term}
+            </div>
+            <div>
+              <strong>IFSC : </strong>
+              {row.ifsc}
+            </div>
           </div>
 
           <div
