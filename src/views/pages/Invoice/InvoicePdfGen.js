@@ -94,28 +94,29 @@ const InvoicePdfGen = ({ row, callBackFunction }) => {
           </div>
 
           {/* <!-- Details Section --> */}
-          <div>
-            <div className="mb-3">
-              <strong>Invoice No : </strong>
-              <span>{row.invoiceNo}</span>
+
+          {/* <div>
+            <div class="d-flex flex-row bd-highlight mb-3">
+              <strong style={{ width: '120px' }}>Invoice No</strong>
+              <div>:</div>
+              <div style={{ marginLeft: '30px' }}>{row.invoiceNo}</div>
             </div>
-            <div className="mb-3">
-              <strong>Invoice Date : </strong>
-              <span> {row.invoiceDate}</span>
+            <div class="d-flex flex-row bd-highlight mb-3">
+              <strong style={{ width: '120px' }}>Invoice Date</strong>
+              <div>:</div>
+              <div style={{ marginLeft: '30px' }}>{row.invoiceDate}</div>
             </div>
-            <div className="mb-3">
-              <strong>Term : </strong>
-              <span>{row.term}</span>
+            <div class="d-flex flex-row bd-highlight mb-3">
+              <strong style={{ width: '120px' }}>Term</strong>
+              <div>:</div>
+              <div style={{ marginLeft: '30px' }}>{row.term}</div>
             </div>
-            <div className="mb-3">
-              <strong>Due Date : </strong>
-              <span>{row.dueDate}</span>
+            <div class="d-flex flex-row bd-highlight mb-3">
+              <strong style={{ width: '120px' }}>Due Date</strong>
+              <div>:</div>
+              <div style={{ marginLeft: '30px' }}>{row.term}</div>
             </div>
-            <div className="mb-3">
-              <strong>Total : </strong>
-              <span>{row.total}</span>
-            </div>
-          </div>
+          </div> */}
           <div
             style={{
               marginBottom: '20px',
@@ -126,43 +127,82 @@ const InvoicePdfGen = ({ row, callBackFunction }) => {
             }}
           >
             <div>
-              <div className="mb-3">
-                <strong>Bill To Address : </strong>
-                <span> {row.billToAddress}</span>
+              <div class="d-flex flex-row bd-highlight mb-3">
+                <strong style={{ width: '120px' }}>Invoice No</strong>
+                <div>:</div>
+                <div style={{ marginLeft: '30px' }}>{row.invoiceNo}</div>
               </div>
-              <div className="mb-3">
-                <strong>Service Month : </strong>
-                <span> {row.serviceMonth}</span>
+              <div class="d-flex flex-row bd-highlight mb-3">
+                <strong style={{ width: '120px' }}>Term</strong>
+                <div>:</div>
+                <div style={{ marginLeft: '30px' }}>{row.term}</div>
               </div>
-              <div className="mb-3">
-                <strong>Tax : </strong>
-                <span>{row.tax}</span>
+              <div class="d-flex flex-row bd-highlight mb-3">
+                <strong style={{ width: '120px' }}>Customer</strong>
+                <div>:</div>
+                <div style={{ marginLeft: '30px' }}>{row.customer}</div>
               </div>
-              <div className="mb-3">
-                <strong>Total : </strong>
-                <span> {row.total}</span>
+              <div class="d-flex flex-row bd-highlight mb-3 pt-3">
+                <strong style={{ width: '120px' }}>Service Month </strong>
+                <div>:</div>
+                <div style={{ marginLeft: '30px' }}>{row.serviceMonth}</div>
               </div>
-              <div className="mb-3">
-                <strong>Notes : </strong>
-                <span>{row.notes}</span>
+              <div class="d-flex flex-row bd-highlight mb-3">
+                <strong style={{ width: '120px' }}>GST Type </strong>
+                <div>:</div>
+                <div style={{ marginLeft: '30px' }}>{row.gstType}</div>
+              </div>
+              <div class="d-flex flex-row bd-highlight mb-3 pt-1">
+                <strong style={{ width: '120px' }}>SGST</strong>
+                <div>:</div>
+                <div style={{ marginLeft: '30px' }}>{row.sgst}</div>
+              </div>
+              <div class="d-flex flex-row bd-highlight mb-3">
+                <strong style={{ width: '119px' }}>Subtotal</strong>
+                <div>:</div>
+                <div style={{ marginLeft: '30px' }}>{row.subTotal}</div>
+              </div>
+              <div class="d-flex flex-row bd-highlight mb-3">
+                <strong style={{ width: '124px' }}>Notes</strong>
+                <div>:</div>
+                <div style={{ marginLeft: '30px' }}>{row.notes}</div>
               </div>
             </div>
             <div style={{ textAlign: 'lrft' }}>
-              <div className="mb-3">
-                <strong>Ship To Address : </strong>
-                <span>{row.shipToAddress}</span>
+              <div class="d-flex flex-row bd-highlight mb-3">
+                <strong style={{ width: '120px' }}>Invoice Date</strong>
+                <div>:</div>
+                <div style={{ marginLeft: '30px' }}>{row.invoiceDate}</div>
               </div>
-              <div className="mb-3">
-                <strong>Company Address : </strong>
-                <span> {row.companyAddress}</span>
+              <div class="d-flex flex-row bd-highlight mb-3">
+                <strong style={{ width: '120px' }}>Due Date</strong>
+                <div>:</div>
+                <div style={{ marginLeft: '30px' }}>{row.dueDate}</div>
               </div>
-              <div className="mb-3">
-                <strong>Subtotal : </strong>
-                <span> {row.subTotal}</span>
+              <div class="d-flex flex-row bd-highlight mb-3">
+                <strong style={{ width: '124px' }}>Address</strong>
+                <div>:</div>
+                <div style={{ marginLeft: '30px' }}>{row.address}</div>
               </div>
-              <div className="mb-3">
-                <strong>Terms and Conditions : </strong>
-                <span> {row.termsAndConditions}</span>
+              <div class="d-flex flex-row bd-highlight mb-3">
+                <strong style={{ width: '120px' }}>Tax</strong>
+                <div>:</div>
+                <div style={{ marginLeft: '30px' }}>{row.tax}</div>
+              </div>
+              <div class="d-flex flex-row bd-highlight mb-3">
+                <strong style={{ width: '120px' }}>CGST</strong>
+                <div>:</div>
+                <div style={{ marginLeft: '30px' }}>{row.cgst}</div>
+              </div>
+              {/* <div class="d-flex flex-row bd-highlight mb-3">
+                <strong style={{ width: '120px' }}>Total</strong>
+                <div>:</div>
+                <div style={{ marginLeft: '30px' }}>{row.total}</div>
+              </div> */}
+              <div class="d-flex flex-row bd-highlight mb-3">
+                <strong style={{ width: '120px' }}>Terms and Conditions</strong>
+                <div>:</div>
+                <div style={{ marginLeft: '30px' }}>{row.termsAndConditions}</div>
               </div>
             </div>
           </div>
@@ -178,62 +218,98 @@ const InvoicePdfGen = ({ row, callBackFunction }) => {
             }}
           >
             <thead>
-              <tr style={{ fontWeight: 'bold' }}>
-                <th style={{ border: '1px solid #000000', padding: '10px' }}>S.No </th>
-                <th style={{ border: '1px solid #000000', padding: '10px' }}>Description *</th>
-                <th style={{ border: '1px solid #000000', padding: '10px' }}>Quantity *</th>
-                <th style={{ border: '1px solid #000000', padding: '10px' }}>Rate *</th>
-                <th style={{ border: '1px solid #000000', padding: '10px' }}>Amount *</th>
-                {/* <th style={{ border: '1px solid #000000', padding: '10px' }}>P. Qty</th>
-                <th style={{ border: '1px solid #000000', padding: '10px' }}>Location</th>
-                <th style={{ border: '1px solid #000000', padding: '10px' }}>Tick</th> */}
+              <tr style={{ fontWeight: 'bold', backgroundColor: '#673AB7' }}>
+                <th className="px-2 py-2 text-white text-center " style={{ border: '1px solid #000000' }}>
+                  S.No{' '}
+                </th>
+                <th className="px-2 py-2 text-white text-center " style={{ border: '1px solid #000000' }}>
+                  Description *
+                </th>
+                <th className="px-2 py-2 text-white text-center " style={{ border: '1px solid #000000' }}>
+                  Quantity *
+                </th>
+                <th className="px-2 py-2 text-white text-center " style={{ border: '1px solid #000000' }}>
+                  Rate *
+                </th>
+                <th className="px-2 py-2 text-white text-center " style={{ border: '1px solid #000000' }}>
+                  Amount *
+                </th>
               </tr>
             </thead>
             <tbody>
               {row.productLines?.map((item, index) => (
                 <tr key={index} style={{ borderBottom: '1px solid #000000' }}>
-                  <td style={{ border: '1px solid #000000', padding: '10px' }}>{index + 1}</td>
+                  <td style={{ border: '1px solid #000000', padding: '10px', textAlign: 'center' }}>{index + 1}</td>
                   <td style={{ border: '1px solid #000000', padding: '10px' }}>{item.description}</td>
-                  <td style={{ border: '1px solid #000000', padding: '10px' }}>{item.quantity}</td>
-                  <td style={{ border: '1px solid #000000', padding: '10px' }}>{item.rate}</td>
-                  <td style={{ border: '1px solid #000000', padding: '10px' }}>{item.amount}</td>
+                  <td style={{ border: '1px solid #000000', padding: '10px', textAlign: 'center' }}>{item.quantity}</td>
+                  <td style={{ border: '1px solid #000000', padding: '10px', textAlign: 'center' }}>{item.rate}</td>
+                  <td style={{ border: '1px solid #000000', padding: '10px', textAlign: 'center' }}>{item.amount}</td>
                 </tr>
               ))}
             </tbody>
           </table>
-
+          {/* <div className="d-flex justify-content-end mb-3">
+            <strong style={{ width: '120px' }}>Total</strong>
+            <div>:</div>
+            <div style={{ marginLeft: '80px', fontWeight: 'bold' }}>{row.total}</div>
+          </div> */}
           {/* <!-- Total Section --> */}
-          <div
+          {/* <div
             style={{
               textAlign: 'right',
               fontWeight: 'bold',
               fontSize: '14px',
-              color: '#333'
+              color: '#333',
+              marginBottom: '20px'
+            }}
+            class="d-flex justify-content-start"
+          >
+            <div> Total: </div>
+            <div>{row.productLines?.reduce((sum, item) => sum + item.putAwayQty, 0)}</div>
+          </div> */}
+
+          <div
+            style={{
+              marginBottom: '20px',
+              display: 'flex',
+              justifyContent: 'space-between',
+              fontSize: '14px',
+              color: '#555'
             }}
           >
-            Total: {row.productLines?.reduce((sum, item) => sum + item.putAwayQty, 0)}
-          </div>
-
-          <div>
-            <div className="mb-3">
-              <strong>BankName : </strong>
-              {row.bankName}
-            </div>
-            <div className="mb-3">
-              <strong>AccountNo : </strong>
-              {row.accountNo}
-            </div>
-            <div className="mb-3">
-              <strong>Account Name : </strong>
-              {row.accountName}
-            </div>
-            <div className="mb-3">
-              <strong>Term : </strong>
-              {row.term}
-            </div>
             <div>
-              <strong>IFSC : </strong>
-              {row.ifsc}
+              <div class="d-flex flex-row bd-highlight mb-3">
+                {/* <strong style={{ width: '120px' }}>BankName</strong>
+                <div>:</div>
+                <div style={{ marginLeft: '30px' }}>{row.bankName}</div> */}
+              </div>
+              <div class="d-flex flex-row bd-highlight mb-3 pt-3">
+                <strong style={{ width: '120px' }}>BankName</strong>
+                <div>:</div>
+                <div style={{ marginLeft: '30px' }}>{row.bankName}</div>
+              </div>
+              <div class="d-flex flex-row bd-highlight mb-3">
+                <strong style={{ width: '120px' }}>Account Name</strong>
+                <div>:</div>
+                <div style={{ marginLeft: '30px' }}>{row.accountName}</div>
+              </div>
+            </div>
+            <div style={{ textAlign: 'lrft' }}>
+              <div class="d-flex flex-row bd-highlight mb-3">
+                <strong style={{ width: '120px' }}>Total</strong>
+                <div>:</div>
+                <div style={{ marginLeft: '30px', fontWeight: 'bold' }}>{row.total}</div>
+              </div>
+              <div class="d-flex flex-row bd-highlight mb-3">
+                <strong style={{ width: '120px' }}>AccountNo</strong>
+                <div>:</div>
+                <div style={{ marginLeft: '30px' }}>{row.accountNo}</div>
+              </div>
+              <div class="d-flex flex-row bd-highlight mb-3">
+                <strong style={{ width: '120px' }}>IFSC</strong>
+                <div>:</div>
+                <div style={{ marginLeft: '30px' }}>{row.ifsc}</div>
+              </div>
             </div>
           </div>
 

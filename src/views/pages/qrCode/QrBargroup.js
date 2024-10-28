@@ -556,9 +556,9 @@ const QrBargroup = () => {
 
   const handleGenerate = async () => {
     const count = parseInt(formData.count, 10);
-  
+
     if (!viewId) {
-      // const isValid = await 
+      // const isValid = await
       handleSave();
     }
 

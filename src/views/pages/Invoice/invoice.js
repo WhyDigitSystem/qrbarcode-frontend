@@ -1,6 +1,8 @@
 import axios from 'axios';
 
 import React, { useState, useEffect } from 'react';
+import CommonBulkUpload from 'utils/CommonBulkUpload';
+import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import Button from '@mui/material/Button';
 import ImageIcon from '@mui/icons-material/Image';
 import ActionButton from 'utils/ActionButton';
@@ -11,6 +13,8 @@ import FormatListBulletedTwoToneIcon from '@mui/icons-material/FormatListBullete
 import AddIcon from '@mui/icons-material/Add';
 import CommonListViewTable from '../CommonListViewTable';
 import InvoicePdfGen from './InvoicePdfGen';
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 import Box from '@mui/material/Box';
 import Tabs from '@mui/material/Tabs';
@@ -40,13 +44,10 @@ import { ToastContainer } from 'react-toastify';
 const Invoice = () => {
   const [loginUserName, setLoginUserName] = useState(localStorage.getItem('userName'));
   const [orgId, setOrgId] = useState(localStorage.getItem('orgId'));
-
-  const [file, setFile] = useState(null);
   const [downloadPdf, setDownloadPdf] = useState(false);
-  const [selectedImage, setSelectedImage] = useState(null);
+  // const [selectedImage, setSelectedImage] = useState(null);
   const [pdfData, setPdfData] = useState([]);
   const [inputValue, setInputValue] = useState('');
-  const [error, setError] = useState('');
   const [editId, setEditId] = useState('');
   const [childTableErrors, setChildTableErrors] = useState([]);
   const [childTableData, setChildTableData] = useState([]);
@@ -71,9 +72,10 @@ const Invoice = () => {
   const serviceMonth = `${day} ${monthNames[parseInt(month, 10) - 1]}`;
 
   const [formData, setFormData] = useState({
-    billToAddress: '',
+    img: '',
+    customer: '',
     cgst: '',
-    companyAddress: '',
+    // companyAddress: '',
     dueDate: dayjs().add(30, 'day').format('DD-MM-YYYY'),
     gstType: '',
     tax: '',
@@ -85,7 +87,7 @@ const Invoice = () => {
     notes: '',
     serviceMonth: serviceMonth,
     sgst: '',
-    shipToAddress: '',
+    address: '',
     subTotal: '',
     termsAndConditions: '',
     total: '',
@@ -105,13 +107,13 @@ const Invoice = () => {
     }
   ]);
 
-  const [rows, setRows] = useState([]);
   const [viewId, setViewId] = useState(true);
 
   const [fieldErrors, setFieldErrors] = useState({
-    billToAddress: '',
+    img: '',
+    customer: '',
     cgst: '',
-    companyAddress: '',
+    // companyAddress: '',
     dueDate: '',
     gstType: '',
     tax: '',
@@ -123,7 +125,7 @@ const Invoice = () => {
     notes: '',
     serviceMonth: '',
     sgst: '',
-    shipToAddress: '',
+    address: '',
     subTotal: '',
     termsAndConditions: '',
     total: '',
@@ -145,16 +147,10 @@ const Invoice = () => {
   useEffect(() => {
     getAllTaxInvoice();
     getTaxInvoiceById();
+    getTaxInvoiceImageById();
   }, []);
 
   const [isLoading, setIsLoading] = useState(false);
-  const handleImageChange = (event) => {
-    const file = event.target.files[0];
-    if (file) {
-      setSelectedImage(URL.createObjectURL(file));
-    }
-  };
-
   const handleAddRow = () => {
     if (isLastRowEmpty(childTableData)) {
       displayRowError(childTableData);
@@ -207,6 +203,30 @@ const Invoice = () => {
       console.error('Error fetching data:', error);
     }
   };
+  const getTaxInvoiceImageById = async (row) => {
+    console.log('THE SELECTED image row ID IS:', row);
+    // setViewId(id);
+    try {
+      const response = await apiCalls('get', `master/uploadImageForTaxInvoice?id=${row.original.id}`);
+      console.log('API Response:', response);
+
+      if (response.status === true) {
+        setListView(false);
+        const particularImage = response.paramObjectsMap.taxInvoiceVO;
+        console.log('THE PARTICULAR Invoice Num DATA IS:', particularImage);
+        setFormData({
+          img: particularImage.img
+        });
+
+        setViewId(false);
+        // setViewId(row);
+      } else {
+        console.error('API Error:', response);
+      }
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    }
+  };
 
   const getTaxInvoiceById = async (row) => {
     console.log('THE SELECTED row ID IS:', row);
@@ -221,13 +241,14 @@ const Invoice = () => {
         console.log('THE PARTICULAR Invoice Num DATA IS:', particularInvoiceNo);
         setFormData({
           accountName: particularInvoiceNo.accountName,
+          taxInvoiceimage: particularInvoiceNo.img,
           taxpercentage: particularInvoiceNo.tax,
           accountNo: particularInvoiceNo.accountNo,
           bankName: particularInvoiceNo.bankName,
           ifsc: particularInvoiceNo.ifsc,
-          billToAddress: particularInvoiceNo.billToAddress,
+          customer: particularInvoiceNo.customer,
           cgst: particularInvoiceNo.cgst,
-          companyAddress: particularInvoiceNo.companyAddress,
+          // companyAddress: particularInvoiceNo.companyAddress,
           dueDate: particularInvoiceNo.dueDate
             ? dayjs(particularInvoiceNo.dueDate).add(30, 'day').format('DD-MM-YYYY')
             : dayjs().add(30, 'day').format('DD-MM-YYYY'),
@@ -238,7 +259,7 @@ const Invoice = () => {
           notes: particularInvoiceNo.notes,
           serviceMonth: particularInvoiceNo.serviceMonth,
           sgst: particularInvoiceNo.sgst,
-          shipToAddress: particularInvoiceNo.shipToAddress,
+          address: particularInvoiceNo.address,
           subTotal: particularInvoiceNo.subTotal,
           termsAndConditions: particularInvoiceNo.termsAndConditions,
           term: particularInvoiceNo.term,
@@ -256,6 +277,7 @@ const Invoice = () => {
         console.log('Mapped Data for Child Table:', mappedData);
 
         setChildTableData(mappedData);
+        getTaxInvoiceImageById();
         setViewId(false);
         // setViewId(row);
       } else {
@@ -326,30 +348,6 @@ const Invoice = () => {
     }
 
     setIsLoading(true);
-    // const requiredFields = [
-    //   'termsAndConditions',
-    //   'subTotal',
-    //   'total',
-    //   'bankName',
-    //   'accountName',
-    //   'accountNo',
-    //   'ifsc',
-    //   'invoiceNo',
-    //   'dueDate',
-    //   'invoiceDate',
-    //   'serviceMonth',
-    //   'companyAddress',
-    //   'billToAddress',
-    //   'shipToAddress'
-    // ];
-
-    // requiredFields.forEach((field) => {
-    //   if (!formData[field]) {
-    //     console.log('allok');
-
-    //     errors[field] = `${field.replace(/([A-Z])/g, ' $1').trim()} is required`;
-    //   }
-    // });
 
     const childVO = childTableData.map((row) => ({
       amount: row.amount,
@@ -361,11 +359,11 @@ const Invoice = () => {
     const saveFormData = {
       ...(editId && { id: editId }),
       createdBy: loginUserName,
-      orgId: 1,
+      // orgId: 1,
       productLines: childVO,
-      billToAddress: formData.billToAddress,
+      customer: formData.customer,
       cgst: formData.cgst,
-      companyAddress: formData.companyAddress,
+      // companyAddress: formData.companyAddress,
       dueDate: dayjs().add(30, 'day').format('YYYY-MM-DD'),
       gstType: formData.gstType,
       tax: formData.taxpercentage,
@@ -377,7 +375,7 @@ const Invoice = () => {
       notes: formData.notes,
       serviceMonth: formData.serviceMonth,
       sgst: formData.sgst,
-      shipToAddress: formData.shipToAddress,
+      address: formData.address,
       subTotal: formData.subTotal,
       termsAndConditions: formData.termsAndConditions,
       total: formData.total,
@@ -385,7 +383,8 @@ const Invoice = () => {
       bankName: formData.bankName,
       accountName: formData.accountName,
       accountNo: formData.accountNo,
-      ifsc: formData.ifsc
+      ifsc: formData.ifsc,
+      taxInvoiceimage: file
     };
 
     console.log('DATA TO SAVE IS:', saveFormData);
@@ -393,6 +392,7 @@ const Invoice = () => {
     try {
       const response = await apiCalls('put', `master/createUpdateTaxInvoice`, saveFormData);
       if (response.status) {
+        handleFileUpload();
         console.log('Response:', response);
         handleClear();
         showToast('success', editId ? 'Invoice Updated Successfully' : 'Invoice created successfully');
@@ -409,88 +409,130 @@ const Invoice = () => {
 
   const validateField = (field, value, formData) => {
     let error = '';
+    // if (!formData.invoiceNo) error.invoiceNo = 'Invoice Num is required';
+    // if (!formData.invoiceDate) error.invoiceDate = 'Invoice Date  is required';
+    // if (!formData.term) error.term = 'Term is required';
+    // if (!formData.dueDate) error.dueDate = 'Due Date is required';
+    // if (!formData.customer) error.customer = 'Customer is required';
+    // if (!formData.address) error.address = 'Address is required';
+    // if (!formData.serviceMonth) error.serviceMonth = 'Service Month is required';
+    // if (!formData.termsAndConditions) error.termsAndConditions = 'Terms And Conditions is required';
+    // if (!formData.notes) error.notes = 'Notes is required';
 
     // Regular expressions for different field types
     const numberRegex = /^[0-9]+$/; // Only digits
     const decimalRegex = /^\d+(\.\d{1,2})?$/; // Validates decimal numbers
     const dateRegex = /^(0[1-9]|[12][0-9]|3[01])-(0[1-9]|1[012])-\d{4}$/; // DD-MM-YYYY format
-    const codeRedex = /^[A-Za-z0-9]+$/;
+    const codeRedex = /^[A-Za-z0-9]+$/; // For invoice number validation
 
-    // switch (field) {
-    //   case 'invoiceNo':
-    //     if (!value) {
-    //       error = 'Invoice Number is required';
-    //     } else if (!codeRedex.test(value)) {
-    //       error = 'Invalid Invoice Number';
-    //     }
-    //     break;
-    //   case 'tax':
-    //     if (formData.tax === 'India') {
-    //       if (!value) {
-    //         error = 'Tax Percentage is required';
-    //       }
-    //       //  else if (!value) {
-    //       //   error = 'Tax Percentage must be a valid number with up to 2 decimal places';
-    //       // }
-    //     }
-    //     break;
-    //   case 'cgst':
-    //   case 'sgst':
-    //     if (formData.gstType === 'Inter') {
-    //       if (!value) {
-    //         error = `${field} is required`;
-    //       }
-    //       //  else if (!decimalRegex.test(value)) {
-    //       //   error = `${field} must be a valid number (up to 2 decimal places)`;
-    //       // }
-    //     }
-    //     break;
-    //   case 'subTotal':
-    //   case 'total':
-    //   case 'amount':
-    //     if (!value) {
-    //       error = 'This field is required';
-    //     } else if (!decimalRegex.test(value)) {
-    //       error = 'Must be a valid number (up to 2 decimal places)';
-    //     }
-    //     break;
-    //   case 'invoiceDate':
-    //   case 'dueDate':
-    //     if (!value) {
-    //       error = 'Date is required';
-    //     } else if (!dateRegex.test(value)) {
-    //       error = 'Invalid date format (DD-MM-YYYY)';
-    //     }
-    //     break;
-    //   default:
-    //     break;
-    // }
+    switch (field) {
+      case 'invoiceNo':
+        if (!value) {
+          error = 'Invoice Number is required';
+        } else if (!codeRedex.test(value)) {
+          error = 'Invalid Invoice Number';
+        }
+        break;
+
+      case 'invoiceDate':
+      case 'dueDate':
+        if (!value) {
+          error = 'Date is required';
+        } else if (!dateRegex.test(value)) {
+          error = 'Invalid date format (DD-MM-YYYY)';
+        }
+        break;
+
+      case 'customer':
+        if (!value) {
+          error = 'Customer Details is required';
+        }
+        break;
+
+      case 'address':
+        if (!value) {
+          error = 'Address is required';
+        }
+        break;
+
+      case 'termsAndConditions':
+        if (!value) {
+          error = 'Terms and Conditions are required';
+        }
+        break;
+
+      case 'notes':
+        if (!value) {
+          error = 'Notes are required';
+        }
+        break;
+
+      default:
+        break;
+    }
 
     return error;
   };
 
-  const handleInputChange = (e, index, fieldName) => {
+  const handleInputChange = (e, index, field) => {
     const { name, value } = e.target;
-
-    // Update form data before validating
-    const updatedFormData = { ...formData, [name]: value };
-    const error = validateField(name, value, updatedFormData);
+    // const errors = {};
 
     if (typeof index === 'number') {
-      const updatedChildTableData = [...childTableData];
-      updatedChildTableData[index][fieldName] = value;
+      const updatedRows = [...childTableData];
 
-      const updatedChildTableErrors = [...childTableErrors];
-      updatedChildTableErrors[index][fieldName] = error;
+      if (!updatedRows[index]) {
+        console.error(`Row at index ${index} is undefined`);
+        return;
+      }
 
-      setChildTableData(updatedChildTableData);
-      setChildTableErrors(updatedChildTableErrors);
+      updatedRows[index][field] = value;
+
+      if (field === 'quantity' || field === 'rate') {
+        const quantity = parseFloat(updatedRows[index].quantity) || 0;
+        const rate = parseFloat(updatedRows[index].rate) || 0;
+        updatedRows[index].amount = (quantity * rate).toFixed(2); // Recalculate amount
+      }
+
+      setChildTableData(updatedRows); // Update state with new data
+      calculateTotalAmount(updatedRows); // Recalculate total
+
+      const updatedErrors = [...childTableErrors];
+      updatedErrors[index][field] = '';
+      setChildTableErrors(updatedErrors);
     } else {
-      const updatedFieldErrors = { ...fieldErrors, [name]: error };
+      const updatedFormData = { ...formData, [name]: value };
 
+      const error = validateField(name, value, updatedFormData);
+
+      const updatedFieldErrors = { ...fieldErrors, [name]: error };
       setFormData(updatedFormData);
       setFieldErrors(updatedFieldErrors);
     }
+  };
+
+  const calculateTotalAmount = (rows) => {
+    let subTotal = rows.reduce((sum, row) => sum + parseFloat(row.amount || 0), 0);
+
+    let taxAmount = 0;
+
+    if (formData.gstType === 'Intra') {
+      const cgst = parseFloat(formData.cgst) || 0;
+      const sgst = parseFloat(formData.sgst) || 0;
+      taxAmount = (subTotal * (cgst + sgst)) / 100;
+    } else if (formData.gstType === 'Inter') {
+      const igst = parseFloat(formData.igst) || 0;
+      taxAmount = (subTotal * igst) / 100;
+    } else if (formData.tax === 'Others') {
+      const taxPercentage = parseFloat(formData.taxpercentage) || 0;
+      taxAmount = (subTotal * taxPercentage) / 100;
+    }
+
+    setFormData((prevFormData) => ({
+      ...prevFormData,
+      subTotal: subTotal.toFixed(2),
+      total: (subTotal + taxAmount).toFixed(2)
+    }));
   };
 
   const handleDeleteRow = (id) => {
@@ -501,11 +543,21 @@ const Invoice = () => {
     setChildTableErrors(updatedTableErrors);
   };
 
+  const handleTableClear = () => {
+    setChildTableErrors([]);
+    setChildTableData({
+      amount: '',
+      description: '',
+      quantity: '',
+      rate: ''
+    });
+  };
+
   const handleClear = () => {
     setFormData({
-      billToAddress: '',
+      customer: '',
       cgst: '',
-      companyAddress: '',
+      // companyAddress: '',
       dueDate: dayjs().add(30, 'day').format('DD-MM-YYYY'),
       gstType: '',
       tax: '',
@@ -515,9 +567,9 @@ const Invoice = () => {
       invoiceNo: '',
       term: '',
       notes: '',
-      serviceMonth: '',
+      serviceMonth: serviceMonth,
       sgst: '',
-      shipToAddress: '',
+      address: '',
       subTotal: '',
       termsAndConditions: '',
       total: '',
@@ -528,9 +580,9 @@ const Invoice = () => {
       ifsc: ''
     });
     setFieldErrors({
-      billToAddress: '',
+      customer: '',
       cgst: '',
-      companyAddress: '',
+      // companyAddress: '',
       dueDate: '',
       gstType: '',
       tax: '',
@@ -542,7 +594,7 @@ const Invoice = () => {
       notes: '',
       serviceMonth: '',
       sgst: '',
-      shipToAddress: '',
+      address: '',
       subTotal: '',
       termsAndConditions: '',
       total: '',
@@ -571,6 +623,36 @@ const Invoice = () => {
     setDownloadPdf(true);
   };
 
+  const [file, setFile] = useState(null);
+  const [uploading, setUploading] = useState(false);
+
+  const handleFileChange = (event) => {
+    setFile(event.target.files[0]);
+  };
+
+  const handleFileUpload = async () => {
+    if (!file) {
+      alert('Please select a file to upload');
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const response = await axios.post(`${process.env.REACT_APP_API_URL}/api/master/uploadImageForTaxInvoice?id=${id}`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      console.log('File Upload Success:', response.data);
+      // alert('File uploaded successfully!');
+    } catch (error) {
+      console.error('File Upload Error:', error);
+      alert('Failed to upload file');
+    }
+  };
+
   return (
     <>
       {/* <ToastContainer /> */}
@@ -580,28 +662,7 @@ const Invoice = () => {
             <ActionButton title="Clear" icon={ClearIcon} onClick={handleClear} />
             <ActionButton title="List View" icon={FormatListBulletedTwoToneIcon} onClick={handleView} />
             <ActionButton title="Save" icon={SaveIcon} onClick={handleSave} />
-            {/* <ActionButton title="Upload" type="file" accept="image/*" icon={ImageIcon} onClick={handleImageChange} /> */}
-            <div>
-              {/* <input
-                accept="image/*"
-                style={{ display: 'none' }} // Hide input
-                id="upload-button"
-                type="file"
-                onChange={handleImageChange}
-              />
-
-              <label htmlFor="upload-button">
-                <Button variant="contained" component="span" startIcon={<ImageIcon />}>
-                  Upload Image
-                </Button>
-              </label> */}
-
-              {/* {selectedImage && (
-                <div style={{ marginTop: '20px' }}>
-                  <img src={selectedImage} alt="Selected" width="200px" height="200px" />
-                </div>
-              )} */}
-            </div>
+            {/* <div></div> */}
           </div>
         </div>
         {listView ? (
@@ -619,6 +680,30 @@ const Invoice = () => {
         ) : (
           <>
             <div className="row">
+              <div className="col-md-3 mb-3">
+                <input type="file" onChange={handleFileChange} />
+                {/* <Button
+                    variant="contained"
+                    component="span"
+                    startIcon={<FaCloudUploadAlt />}
+                    onClick={handleFileUpload}
+                    disabled={uploading}
+                  >
+                    {uploading ? 'Uploading...' : 'Upload'}
+                  </Button> */}
+                {/* <TextField
+                  type="file"
+                  name="img"
+                  onChange={handleImage}
+                  label="Image Upload"
+                  variant="outlined"
+                  size="small"
+                  fullWidth
+                  value={formData.img}
+                  error={!!fieldErrors.img}
+                  helperText={fieldErrors.img}
+                /> */}
+              </div>
               <div className="col-md-3 mb-3">
                 <TextField
                   label="Invoice No"
@@ -644,6 +729,7 @@ const Invoice = () => {
                   onChange={handleInputChange}
                   error={!!fieldErrors.invoiceDate}
                   helperText={fieldErrors.invoiceDate}
+                  disabled
                 />
               </div>
 
@@ -672,34 +758,35 @@ const Invoice = () => {
                   onChange={handleInputChange}
                   error={!!fieldErrors.dueDate}
                   helperText={fieldErrors.dueDate}
+                  disabled
                 />
               </div>
 
-              <div className="col-md-6 mb-3">
+              <div className="col-md-3 mb-3">
                 <TextField
                   label="Customer"
                   variant="outlined"
                   size="small"
                   fullWidth
-                  name="billToAddress"
-                  value={formData.billToAddress}
+                  name="customer"
+                  value={formData.customer}
                   onChange={handleInputChange}
-                  error={!!fieldErrors.billToAddress}
-                  helperText={fieldErrors.billToAddress}
+                  error={!!fieldErrors.customer}
+                  helperText={fieldErrors.customer}
                 />
               </div>
 
-              <div className="col-md-6 mb-3">
+              <div className="col-md-3 mb-3">
                 <TextField
                   label="Address"
                   variant="outlined"
                   size="small"
                   fullWidth
-                  name="shipToAddress"
-                  value={formData.shipToAddress}
+                  name="address"
+                  value={formData.address}
                   onChange={handleInputChange}
-                  error={!!fieldErrors.shipToAddress}
-                  helperText={fieldErrors.shipToAddress}
+                  error={!!fieldErrors.address}
+                  helperText={fieldErrors.address}
                 />
               </div>
 
@@ -714,10 +801,11 @@ const Invoice = () => {
                   onChange={handleInputChange}
                   error={!!fieldErrors.serviceMonth}
                   helperText={fieldErrors.serviceMonth}
+                  disabled
                 />
               </div>
 
-              <div className="col-md-3 mb-3">
+              {/* <div className="col-md-3 mb-3">
                 <TextField
                   label="Company Address"
                   variant="outlined"
@@ -729,7 +817,8 @@ const Invoice = () => {
                   error={!!fieldErrors.companyAddress}
                   helperText={fieldErrors.companyAddress}
                 />
-              </div>
+              </div> */}
+
               <div className="col-md-3 mb-3">
                 <FormControl variant="outlined" size="small" fullWidth error={!!fieldErrors.tax}>
                   <InputLabel>Tax</InputLabel>
@@ -831,6 +920,7 @@ const Invoice = () => {
                   onChange={handleInputChange}
                   error={!!fieldErrors.subTotal}
                   helperText={fieldErrors.subTotal}
+                  disabled
                 />
               </div>
 
@@ -845,6 +935,7 @@ const Invoice = () => {
                   onChange={handleInputChange}
                   error={!!fieldErrors.total}
                   helperText={fieldErrors.total}
+                  disabled
                 />
               </div>
 
@@ -876,7 +967,6 @@ const Invoice = () => {
                 />
               </div>
             </div>
-
             <>
               <Box sx={{ width: '100%' }}>
                 <Tabs value={value} onChange={handleTapChange} aria-label="Invoice Tabs">
@@ -891,7 +981,7 @@ const Invoice = () => {
                         <div className="row ">
                           <div className="mb-2 d-flex">
                             <ActionButton title="Add" icon={AddIcon} onClick={handleAddRow} />
-                            <ActionButton title="Clear" icon={ClearIcon} onClick={handleClear} />
+                            <ActionButton title="Clear" icon={ClearIcon} onClick={handleTableClear} />
                           </div>
                         </div>
                         <div className="row mt-2">
@@ -1004,7 +1094,7 @@ const Invoice = () => {
                             <TextField
                               size="small"
                               fullWidth
-                              label="Account No:"
+                              label="Account No"
                               margin="normal"
                               name="accountNo"
                               value={formData.accountNo}
