@@ -45,12 +45,10 @@ const Invoice = () => {
   const [loginUserName, setLoginUserName] = useState(localStorage.getItem('userName'));
   const [orgId, setOrgId] = useState(localStorage.getItem('orgId'));
   const [downloadPdf, setDownloadPdf] = useState(false);
-  // const [selectedImage, setSelectedImage] = useState(null);
   const [pdfData, setPdfData] = useState([]);
-  const [inputValue, setInputValue] = useState('');
   const [editId, setEditId] = useState('');
-  const [childTableErrors, setChildTableErrors] = useState([]);
-  const [childTableData, setChildTableData] = useState([]);
+  // const [childTableErrors, setChildTableErrors] = useState([]);
+  // const [childTableData, setChildTableData] = useState([]);
   const [value, setValue] = useState(0);
 
   const invoiceDate = dayjs().format('DD-MM-YYYY');
@@ -107,6 +105,16 @@ const Invoice = () => {
     }
   ]);
 
+  const [modalTableErrors, setModalTableErrors] = useState([
+    {
+      id: 1,
+      description: '',
+      amount: '',
+      quantity: '',
+      rate: ''
+    }
+  ]);
+
   const [viewId, setViewId] = useState(true);
 
   const [fieldErrors, setFieldErrors] = useState({
@@ -146,20 +154,20 @@ const Invoice = () => {
 
   useEffect(() => {
     getAllTaxInvoice();
-    getTaxInvoiceById();
-    getTaxInvoiceImageById();
+    // getTaxInvoiceById();
+    // getTaxInvoiceImageById();
   }, []);
 
   const [isLoading, setIsLoading] = useState(false);
   const handleAddRow = () => {
-    if (isLastRowEmpty(childTableData)) {
-      displayRowError(childTableData);
+    if (isLastRowEmpty(modalTableData)) {
+      displayRowError(modalTableData);
       return;
     }
 
     const newRow = { id: Date.now(), description: '', amount: '', quantity: '', rate: '' };
-    setChildTableData([...childTableData, newRow]);
-    setChildTableErrors([...childTableErrors, { description: '', amount: '', quantity: '', rate: '' }]);
+    setModalTableData([...modalTableData, newRow]);
+    setModalTableErrors([...modalTableErrors, { description: '', amount: '', quantity: '', rate: '' }]);
     setViewId(false);
   };
 
@@ -167,14 +175,14 @@ const Invoice = () => {
     const lastRow = table[table.length - 1];
     if (!lastRow) return false;
 
-    if (table === childTableData) {
+    if (table === modalTableData) {
       return !lastRow.rate || !lastRow.quantity || !lastRow.amount || !lastRow.description;
     }
     return false;
   };
 
   const displayRowError = (table) => {
-    setChildTableErrors((prevErrors) => {
+    setModalTableErrors((prevErrors) => {
       const newErrors = [...prevErrors];
       const lastRow = table[table.length - 1];
 
@@ -195,7 +203,7 @@ const Invoice = () => {
       console.log('API Response:', response);
       if (response.status === true) {
         setListViewData(response.paramObjectsMap.taxInvoiceVO);
-        // getTaxInvoiceById();
+        getTaxInvoiceById();
       } else {
         console.error('API Error:', response);
       }
@@ -278,7 +286,7 @@ const Invoice = () => {
 
         console.log('Mapped Data for Child Table:', mappedData);
 
-        setChildTableData(mappedData);
+        setModalTableData(mappedData);
         getTaxInvoiceImageById();
         setViewId(false);
         // setViewId(row);
@@ -307,13 +315,12 @@ const Invoice = () => {
     return error;
   };
 
-  // Enhanced handleInputChange for dynamic form and table validation
   const handleInputChange = (e, index, field) => {
     const { name, value } = e.target;
     let error = '';
 
     if (typeof index === 'number') {
-      const updatedRows = [...childTableData];
+      const updatedRows = [...modalTableData];
       if (!updatedRows[index]) return;
 
       updatedRows[index][field] = field === 'quantity' || field === 'rate' || field === 'amount' ? parseFloat(value) || 0 : value;
@@ -325,12 +332,12 @@ const Invoice = () => {
       }
 
       error = validateField(field, updatedRows[index][field], formData);
-      const newTableErrors = [...childTableErrors];
+      const newTableErrors = [...modalTableErrors];
       newTableErrors[index] = newTableErrors[index] || {};
       newTableErrors[index][field] = error;
 
-      setChildTableErrors(newTableErrors);
-      setChildTableData(updatedRows);
+      setModalTableErrors(newTableErrors);
+      setModalTableData(updatedRows);
       calculateTotalAmount(updatedRows);
     } else {
       const updatedFormData = {
@@ -344,45 +351,72 @@ const Invoice = () => {
     }
   };
 
+  // const handleInputChange = (e, index, field) => {
+  //   const { name, value } = e.target;
+  //   const updatedRows = [...modalTableData];
+  //   if (!updatedRows[index]) return;
+  
+  //   updatedRows[index][field] = field === 'quantity' || field === 'rate' || field === 'amount' ? parseFloat(value) || 0 : value;
+  
+  //   if (field === 'quantity' || field === 'rate') {
+  //     const quantity = parseFloat(updatedRows[index].quantity) || 0;
+  //     const rate = parseFloat(updatedRows[index].rate) || 0;
+  //     updatedRows[index].amount = (quantity * rate).toFixed(2);
+  //   }
+  
+  //   setModalTableData(updatedRows);
+  //   calculateTotalAmount(updatedRows);
+  //     // error = validateField(name, updatedFormData[name], updatedFormData);
+  //     // setFieldErrors((prevErrors) => ({ ...prevErrors, [name]: error }));
+  //     // setFormData(updatedFormData);
+  // };
+  
+  const handleEditRow = (id, newData) => {
+    setModalTableData((prevData) =>
+      prevData.map((row) => (row.id === id ? { ...row, ...newData } : row))
+    );
+  };
+  
   const handleSave = async () => {
     const errors = {};
+    if (!formData.accountName) {
+      errors.accountName = 'Account Name is required';
+    }
+    // if (!formData.exRate) {
+    //   errors.exRate = 'Ex Rate is required';
+    // }
+    // if (!formData.refNo) {
+    //   errors.refNo = 'Ref No is required';
+    // }
+    // if (!formData.refDate) {
+    //   errors.refDate = 'Ref Date is required';
+    // }
+    // if (!formData.voucherSubType) {
+    //   errors.voucherSubType = 'Voucher Sub Type is required';
+    // }
 
-    Object.keys(formData).forEach((field) => {
-      const error = validateField(field, formData[field], formData);
-      if (error) errors[field] = error;
-    });
-
-    let childTableDataValid = true;
-    const newTableErrors = [];
-    childTableData.forEach((row, index) => {
+    let detailTableDataValid = true;
+    const newTableErrors = modalTableData.map((row) => {
       const rowErrors = {};
       if (!row.description) rowErrors.description = 'Description is required';
       if (!row.quantity) rowErrors.quantity = 'Quantity is required';
       if (!row.rate) rowErrors.rate = 'Rate is required';
       if (!row.amount) rowErrors.amount = 'Amount is required';
 
-      if (Object.keys(rowErrors).length > 0) {
-        childTableDataValid = false;
-        newTableErrors[index] = rowErrors;
-      }
+      return rowErrors;
     });
-
     setFieldErrors(errors);
-    setChildTableErrors(newTableErrors);
 
-    if (!childTableDataValid || Object.keys(errors).length > 0) {
-      return;
-    }
+    setModalTableErrors(newTableErrors);
 
-    try {
-      setIsLoading(true);
-      const childVO = childTableData.map((row) => ({
+    if (Object.keys(errors).length === 0 && detailTableDataValid) {
+      const childVO = modalTableData.map((row) => ({
+        ...(editId && { id: row.id }),
         description: row.description,
         quantity: row.quantity,
         rate: row.rate,
         amount: row.amount
       }));
-
       const saveFormData = {
         ...(editId && { id: editId }),
         createdBy: loginUserName,
@@ -405,27 +439,29 @@ const Invoice = () => {
         accountName: formData.accountName,
         accountNo: formData.accountNo,
         ifsc: formData.ifsc,
-        taxInvoiceimage: formData.taxInvoiceimage || '' 
+        taxInvoiceimage: formData.taxInvoiceimage || ''
       };
+      console.log('DATA TO SAVE IS:', saveFormData);
+      try {
+        const response = await apiCalls('put', `master/createUpdateTaxInvoice`, saveFormData);
+        if (response.status) {
+          handleClear();
+          getAllTaxInvoice();
+          handleFileUpload(response.paramObjectsMap.taxInvoiceVO.id);
+          console.log('img id', response.paramObjectsMap.taxInvoiceVO.id);
 
-      console.log('Data to Save:', saveFormData); 
-
-      //
-      const response = await apiCalls('put', `master/createUpdateTaxInvoice`, saveFormData);
-      if (response.status) {
-        handleClear();
-        getAllTaxInvoice();
-        handleFileUpload(response.paramObjectsMap.taxInvoiceVO.id);
-        console.log('Response:', response);
-        showToast('success', editId ? 'Invoice Updated Successfully' : 'Invoice created successfully');
-      } else {
-        showToast('error', response.paramObjectsMap.message || 'Invoice Creation failed');
+          console.log('Response:', response);
+          showToast('success', editId ? 'Invoice Updated Successfully' : 'Invoice created successfully');
+        } else {
+          showToast('error', response.paramObjectsMap.message || 'Invoice Creation failed');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        showToast('error', 'General Journal creation failed');
       }
-    } catch (error) {
-      console.error('Error:', error);
-      showToast('error', 'Invoice failed');
-    } finally {
-      setIsLoading(false);
+    } else {
+      setFieldErrors(errors);
+      setModalTableErrors(errors);
     }
   };
 
@@ -454,21 +490,16 @@ const Invoice = () => {
   };
 
   const handleDeleteRow = (id) => {
-    const updatedTableData = childTableData.filter((row) => row.id !== id);
-    const updatedTableErrors = childTableErrors.filter((_, index) => childTableData[index].id !== id);
+    const updatedTableData = modalTableData.filter((row) => row.id !== id);
+    const updatedTableErrors = modalTableErrors.filter((_, index) => modalTableData[index].id !== id);
 
-    setChildTableData(updatedTableData);
-    setChildTableErrors(updatedTableErrors);
+    setModalTableData(updatedTableData);
+    setModalTableErrors(updatedTableErrors);
   };
 
   const handleTableClear = () => {
-    setChildTableErrors([]);
-    setChildTableData({
-      amount: '',
-      description: '',
-      quantity: '',
-      rate: ''
-    });
+    setModalTableErrors([]);
+    setModalTableData([]);
   };
 
   const handleClear = () => {
@@ -524,8 +555,8 @@ const Invoice = () => {
       accountNo: '',
       ifsc: ''
     });
-    setChildTableErrors([]);
-    setChildTableData([]);
+    setModalTableErrors([]);
+    setModalTableData([]);
   };
 
   const handleTapChange = (event, newValue) => {
@@ -560,7 +591,13 @@ const Invoice = () => {
     formData.append('file', file);
 
     try {
-      const response = await axios.post(`${process.env.REACT_APP_API_URL}/api/master/uploadImageForTaxInvoice?id=${imgId}`, formData, {
+      // const response = await axios.post(`${process.env.REACT_APP_API_URL}/api/master/uploadImageForTaxInvoice?id=${imgId}`, formData, {
+      //   headers: {
+      //     'Content-Type': 'multipart/form-data'
+      //   }
+      // });
+
+      const response = await apiCalls('post', `master/uploadImageForTaxInvoice?id=${imgId}`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
@@ -583,7 +620,6 @@ const Invoice = () => {
             <ActionButton title="Clear" icon={ClearIcon} onClick={handleClear} />
             <ActionButton title="List View" icon={FormatListBulletedTwoToneIcon} onClick={handleView} />
             <ActionButton title="Save" icon={SaveIcon} onClick={handleSave} />
-        
           </div>
         </div>
         {listView ? (
@@ -604,7 +640,7 @@ const Invoice = () => {
               <div className="col-md-3 mb-3">
                 <input type="file" onChange={handleFileChange} />
                 {/* // onClick={handleFileUpload} */}
-                
+
                 {/* <Button
                     variant="contained"
                     component="span"
@@ -934,14 +970,14 @@ const Invoice = () => {
                                   </tr>
                                 </thead>
                                 <tbody>
-                                  {childTableData.length === 0 ? (
+                                  {modalTableData.length === 0 ? (
                                     <tr>
                                       <td colSpan="18" className="text-center py-2">
                                         No Data Found
                                       </td>
                                     </tr>
                                   ) : (
-                                    childTableData.map((row, index) => (
+                                    modalTableData.map((row, index) => (
                                       <tr key={row.id}>
                                         {!viewId && (
                                           <td className="border px-2 py-2 text-center">
@@ -953,10 +989,10 @@ const Invoice = () => {
 
                                                 handleDeleteRow(
                                                   row.id,
-                                                  childTableData,
-                                                  setChildTableData,
-                                                  childTableErrors,
-                                                  setChildTableErrors
+                                                  modalTableData,
+                                                  setModalTableData,
+                                                  modalTableErrors,
+                                                  setModalTableErrors
                                                 );
                                               }}
                                             />
@@ -968,10 +1004,10 @@ const Invoice = () => {
                                             type="text"
                                             value={row.description}
                                             onChange={(e) => handleInputChange(e, index, 'description')}
-                                            className={childTableErrors[index]?.description ? 'error form-control' : 'form-control'}
+                                            className={modalTableErrors[index]?.description ? 'error form-control' : 'form-control'}
                                           />
-                                          {childTableErrors[index]?.description && (
-                                            <div className="text-danger">{childTableErrors[index].description}</div>
+                                          {modalTableErrors[index]?.description && (
+                                            <div className="text-danger">{modalTableErrors[index].description}</div>
                                           )}
                                         </td>
                                         <td className="border px-2 py-2">
@@ -979,10 +1015,10 @@ const Invoice = () => {
                                             type="number"
                                             value={row.quantity}
                                             onChange={(e) => handleInputChange(e, index, 'quantity')}
-                                            className={childTableErrors[index]?.quantity ? 'error form-control' : 'form-control'}
+                                            className={modalTableErrors[index]?.quantity ? 'error form-control' : 'form-control'}
                                           />
-                                          {childTableErrors[index]?.quantity && (
-                                            <div className="text-danger">{childTableErrors[index].quantity}</div>
+                                          {modalTableErrors[index]?.quantity && (
+                                            <div className="text-danger">{modalTableErrors[index].quantity}</div>
                                           )}
                                         </td>
                                         <td className="border px-2 py-2">
@@ -990,10 +1026,10 @@ const Invoice = () => {
                                             type="number"
                                             value={row.rate}
                                             onChange={(e) => handleInputChange(e, index, 'rate')}
-                                            className={childTableErrors[index]?.rate ? 'error form-control' : 'form-control'}
+                                            className={modalTableErrors[index]?.rate ? 'error form-control' : 'form-control'}
                                           />
-                                          {childTableErrors[index]?.rate && (
-                                            <div className="text-danger">{childTableErrors[index].rate}</div>
+                                          {modalTableErrors[index]?.rate && (
+                                            <div className="text-danger">{modalTableErrors[index].rate}</div>
                                           )}
                                         </td>
                                         <td className="border px-2 py-2">
@@ -1002,10 +1038,10 @@ const Invoice = () => {
                                             value={row.amount}
                                             disabled
                                             onChange={(e) => handleInputChange(e, index, 'amount')}
-                                            className={childTableErrors[index]?.amount ? 'error form-control' : 'form-control'}
+                                            className={modalTableErrors[index]?.amount ? 'error form-control' : 'form-control'}
                                           />
-                                          {childTableErrors[index]?.amount && (
-                                            <div className="text-danger">{childTableErrors[index].amount}</div>
+                                          {modalTableErrors[index]?.amount && (
+                                            <div className="text-danger">{modalTableErrors[index].amount}</div>
                                           )}
                                         </td>
                                       </tr>
