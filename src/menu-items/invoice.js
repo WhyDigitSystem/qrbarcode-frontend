@@ -25,6 +25,12 @@ const Invoice = {
           title: 'Invoice',
           type: 'item',
           url: '/invoice',
+        },
+        {
+          id: 'invoicepdf',
+          title: 'Invoice PDF',
+          type: 'item',
+          url: '/invoicepdf',
         }
       ]
     }
